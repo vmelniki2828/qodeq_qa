@@ -1,0 +1,231 @@
+/* Calendar.css */
+.calendar-container {
+  position: relative;
+  width: 100%;
+}
+
+.calendar-input {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  height: 35.09px;
+}
+
+.calendar-input:hover {
+  border-color: var(--color-text);
+}
+
+.calendar-value {
+  color: var(--color-text);
+  font-size: 14px;
+  flex: 1;
+}
+
+.calendar-icon {
+  font-size: 16px;
+  opacity: 0.7;
+}
+
+.calendar-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  margin-top: 4px;
+  padding: 20px;
+  animation: slideDown 0.2s ease-out;
+  min-width: 300px;
+  max-width: 350px;
+  width: max-content;
+}
+
+/* Позиционирование для предотвращения выхода за пределы экрана */
+.calendar-dropdown.position-top {
+  top: auto;
+  bottom: 100%;
+  margin-top: 0;
+  margin-bottom: 4px;
+}
+
+.calendar-dropdown.position-left {
+  left: 0;
+  right: auto;
+}
+
+.calendar-dropdown.position-right {
+  left: auto;
+  right: 0;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.calendar-nav-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+  color: var(--color-text);
+}
+
+.calendar-nav-btn:hover {
+  background: var(--color-bg-panel);
+}
+
+.calendar-month-year {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--color-text);
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.calendar-weekday {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  padding: 10px 4px;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.calendar-day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  user-select: none;
+  color: var(--color-text);
+}
+
+.calendar-day:hover {
+  background: var(--color-bg-panel);
+}
+
+.calendar-day.selected {
+  background: var(--color-text);
+  color: var(--color-bg);
+}
+
+.calendar-day.today {
+  background: var(--color-bg-panel);
+  font-weight: 600;
+}
+
+.calendar-day.today.selected {
+  background: var(--color-text);
+  color: var(--color-bg);
+}
+
+.calendar-day.empty {
+  cursor: default;
+}
+
+.calendar-day.empty:hover {
+  background: transparent;
+}
+
+.calendar-footer {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.calendar-today-btn,
+.calendar-clear-btn {
+  padding: 8px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.calendar-today-btn:hover,
+.calendar-clear-btn:hover {
+  background: var(--color-bg-panel);
+}
+
+.calendar-today-btn {
+  color: var(--color-text);
+}
+
+.calendar-clear-btn {
+  color: var(--color-text-muted);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .calendar-dropdown {
+    padding: 16px;
+    min-width: 280px;
+    max-width: 320px;
+  }
+  
+  .calendar-day {
+    height: 36px;
+    font-size: 14px;
+  }
+  
+  .calendar-month-year {
+    font-size: 15px;
+  }
+  
+  .calendar-nav-btn {
+    font-size: 18px;
+    padding: 5px 10px;
+  }
+  
+  /* На мобильных устройствах всегда показываем сверху */
+  .calendar-dropdown.position-top {
+    top: auto;
+    bottom: 100%;
+    margin-top: 0;
+    margin-bottom: 4px;
+  }
+}

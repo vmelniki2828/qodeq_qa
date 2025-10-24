@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { SettingOutlined } from '@ant-design/icons';
+import { FiEdit3 } from 'react-icons/fi';
 import './QASettings.css';
 
 export const QASettings = () => {
@@ -48,6 +49,15 @@ export const QASettings = () => {
   // Состояния для редактирования интеграции
   const [editingIntegration, setEditingIntegration] = useState(null);
   const [isEditIntegrationModalOpen, setIsEditIntegrationModalOpen] = useState(false);
+  
+  // Состояние для выбранного языка
+  const [selectedLanguage, setSelectedLanguage] = useState('RU');
+  const [isLanguageSwitcherVisible, setIsLanguageSwitcherVisible] = useState(false);
+  const [promptsData, setPromptsData] = useState(null);
+  const [isPromptsLoading, setIsPromptsLoading] = useState(false);
+  const [promptsError, setPromptsError] = useState('');
+  const [isEditingMode, setIsEditingMode] = useState(false);
+  const [isUpdatingPrompt, setIsUpdatingPrompt] = useState(false);
   const [isUpdatingIntegration, setIsUpdatingIntegration] = useState(false);
   const [isDeletingIntegration, setIsDeletingIntegration] = useState(false);
   
@@ -251,6 +261,74 @@ export const QASettings = () => {
     }
   };
 
+  // Функция для загрузки промптов
+  const fetchPrompts = async (language) => {
+    try {
+      setIsPromptsLoading(true);
+      setPromptsError('');
+
+      // Преобразуем язык в формат API
+      const languageMap = {
+        'RU': 'russian',
+        'EN': 'english', 
+        'TR': 'turkish'
+      };
+
+      const apiLanguage = languageMap[language] || 'russian';
+
+      const response = await fetch(`http://185.138.164.88/api/v1/settings/main/prompts?language=${apiLanguage}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setPromptsData(data);
+    } catch (err) {
+      console.error('Ошибка загрузки промптов:', err);
+      setPromptsError('Ошибка загрузки данных промптов');
+    } finally {
+      setIsPromptsLoading(false);
+    }
+  };
+
+  // Функция для обновления промпта
+  const updatePrompt = async (promptId) => {
+    try {
+      setIsUpdatingPrompt(true);
+
+      const response = await fetch('http://185.138.164.88/api/v1/settings/main/', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt_version_id: promptId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // После успешного обновления выходим из режима редактирования
+      setIsEditingMode(false);
+      setIsLanguageSwitcherVisible(false);
+      
+      console.log('Промпт успешно обновлен:', promptId);
+    } catch (err) {
+      console.error('Ошибка обновления промпта:', err);
+      alert('Ошибка обновления промпта');
+    } finally {
+      setIsUpdatingPrompt(false);
+    }
+  };
+
   // Функция для загрузки тегов
   const fetchTags = async () => {
     try {
@@ -415,7 +493,7 @@ export const QASettings = () => {
     setIsCreatingProject(true);
     
     try {
-      const response = await fetch('http://185.138.164.88/api/v1/settings/projects/', {
+      const response = await fetch('http://185.138.164.88/api/v1/settings/project с/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1085,12 +1163,101 @@ export const QASettings = () => {
                           <div className="stat-description">Имя версии промпта</div>
                         </div>
                         
-                        <div className="stat-item">
-                          <div className="stat-label">Уровень</div>
-                          <div className={`stat-status level-${settingsData.prompt_version?.level || 'unknown'}`}>
-                            {settingsData.prompt_version?.level || 'Не указан'}
+                        <div className="stat-item level-item">
+                          <div className="level-header">
+                            <div className="level-info">
+                              <div className="stat-label">Уровень</div>
+                              <div className="stat-description">Сложность промпта</div>
+                            </div>
+                            <button 
+                              className="edit-language-btn"
+                              onClick={() => {
+                                setIsLanguageSwitcherVisible(!isLanguageSwitcherVisible);
+                                setIsEditingMode(!isEditingMode);
+                                if (!isEditingMode) {
+                                  // При первом открытии загружаем промпты для текущего языка
+                                  fetchPrompts(selectedLanguage);
+                                }
+                              }}
+                            >
+                              <FiEdit3 />
+                            </button>
                           </div>
-                          <div className="stat-description">Сложность промпта</div>
+                          
+                          {/* Переключатель языков - показывается только при нажатии на карандаш */}
+                          {isLanguageSwitcherVisible && (
+                            <div className="language-switcher">
+                              <button 
+                                className={`language-btn ${selectedLanguage === 'RU' ? 'active' : ''}`}
+                                onClick={() => {
+                                  setSelectedLanguage('RU');
+                                  fetchPrompts('RU');
+                                }}
+                              >
+                                RU
+                              </button>
+                              <button 
+                                className={`language-btn ${selectedLanguage === 'EN' ? 'active' : ''}`}
+                                onClick={() => {
+                                  setSelectedLanguage('EN');
+                                  fetchPrompts('EN');
+                                }}
+                              >
+                                EN
+                              </button>
+                              <button 
+                                className={`language-btn ${selectedLanguage === 'TR' ? 'active' : ''}`}
+                                onClick={() => {
+                                  setSelectedLanguage('TR');
+                                  fetchPrompts('TR');
+                                }}
+                              >
+                                TR
+                              </button>
+                            </div>
+                          )}
+                          
+                          {/* Отображение контента в зависимости от режима */}
+                          {isEditingMode ? (
+                            // Режим редактирования - показываем доступные промпты
+                            <div className="prompts-list">
+                              <div className="prompts-title">Выберите промпт:</div>
+                              {isPromptsLoading ? (
+                                <div className="prompts-loading">
+                                  <div className="loading-spinner"></div>
+                                  <span>Загрузка промптов...</span>
+                                </div>
+                              ) : promptsError ? (
+                                <div className="prompts-error">
+                                  {promptsError}
+                                </div>
+                              ) : promptsData && promptsData.length > 0 ? (
+                                promptsData.map((prompt) => (
+                                  <div 
+                                    key={prompt.id} 
+                                    className={`prompt-item selectable ${isUpdatingPrompt ? 'disabled' : ''}`} 
+                                    onClick={() => {
+                                      if (!isUpdatingPrompt) {
+                                        updatePrompt(prompt.id);
+                                      }
+                                    }}
+                                  >
+                                    <div className="prompt-name">{prompt.name}</div>
+                                    <div className={`prompt-level level-${prompt.level}`}>
+                                      {prompt.level}
+                                    </div>
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="prompt-empty">Промпты не найдены</div>
+                              )}
+                            </div>
+                          ) : (
+                            // Обычный режим - показываем актуальный уровень
+                            <div className={`stat-status level-${settingsData.prompt_version?.level || 'unknown'}`}>
+                              {settingsData.prompt_version?.level || 'Не указан'}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

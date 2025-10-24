@@ -385,7 +385,7 @@ export const TableHeader = styled.th`
   font-weight: 600;
   font-size: 0.9rem;
   padding: 16px 12px;
-  text-align: left;
+  text-align: center;
   border-bottom: 2px solid var(--color-border);
   white-space: nowrap;
 `;
@@ -396,6 +396,7 @@ export const TableCell = styled.td`
   color: var(--color-text);
   font-size: 0.9rem;
   vertical-align: middle;
+  text-align: center;
   white-space: nowrap;
 `;
 

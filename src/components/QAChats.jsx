@@ -13,7 +13,6 @@ import {
   RemoveFilterBtn,
   FiltersTriggerBtn,
   FilterIcon,
-  FilterBadge,
   SlideoutFilters,
   SlideoutContent,
   SlideoutHeader,
@@ -131,6 +130,8 @@ export const QAChats = () => {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [isTableLoading, setIsTableLoading] = useState(false);
   const [openCalendar, setOpenCalendar] = useState(null);
+  const [projects, setProjects] = useState([]);
+  const [isProjectsLoading, setIsProjectsLoading] = useState(false);
 
   useEffect(() => {
     const fetchChats = async () => {
@@ -161,6 +162,10 @@ export const QAChats = () => {
         
         if (filters.username) {
           url += `&username=${filters.username}`;
+        }
+        
+        if (filters.project) {
+          url += `&project_id=${filters.project}`;
         }
         
         if (filters.createdFrom) {
@@ -195,7 +200,35 @@ export const QAChats = () => {
     };
 
     fetchChats();
-  }, [filters.userType, filters.chatColor, filters.checked, filters.username, filters.createdFrom, filters.createdTo]);
+  }, [filters.userType, filters.chatColor, filters.checked, filters.username, filters.project, filters.createdFrom, filters.createdTo]);
+
+  // Загрузка проектов
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        setIsProjectsLoading(true);
+        const response = await fetch('http://185.138.164.88/api/v1/settings/project/?skip=0&limit=100', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setProjects(data);
+      } catch (err) {
+        console.error('Ошибка загрузки проектов:', err);
+      } finally {
+        setIsProjectsLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, []);
 
   const handleFilterChange = (filterType, value) => {
     setFilters(prev => ({
@@ -428,7 +461,7 @@ export const QAChats = () => {
                 )}
                 {filters.project && (
                   <ActiveFilterItem>
-                    <ActiveFilterText>Проект: {filters.project}</ActiveFilterText>
+                    <ActiveFilterText>Проект: {projects.find(p => p.id === filters.project)?.title || filters.project}</ActiveFilterText>
                     <RemoveFilterBtn onClick={() => handleFilterChange('project', '')}>×</RemoveFilterBtn>
                   </ActiveFilterItem>
                 )}
@@ -451,11 +484,6 @@ export const QAChats = () => {
         
         <FiltersTriggerBtn onClick={() => setIsFiltersOpen(!isFiltersOpen)}>
           <FilterIcon>🔍</FilterIcon>
-          {Object.values(filters).filter(value => value !== '').length > 0 && (
-            <FilterBadge>
-              {Object.values(filters).filter(value => value !== '').length}
-            </FilterBadge>
-          )}
         </FiltersTriggerBtn>
         <SlideoutFilters isOpen={isFiltersOpen}>
           <SlideoutContent>
@@ -542,12 +570,17 @@ export const QAChats = () => {
 
               <FilterGroup>
                 <FilterLabel>Project:</FilterLabel>
-                <FilterInput 
-                  type="text"
-                  placeholder="Search project..."
+                <FilterSelect 
                   value={filters.project}
                   onChange={(e) => handleFilterChange('project', e.target.value)}
-                />
+                >
+                  <option value="">All Projects</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.title}
+                    </option>
+                  ))}
+                </FilterSelect>
               </FilterGroup>
 
               <FilterActions>

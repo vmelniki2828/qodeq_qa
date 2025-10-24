@@ -36,36 +36,27 @@
 /* Сетка аналитики */
 .analytics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: 24px;
   max-width: 1400px;
   margin: 0 auto;
-  padding-bottom: 24px; /* Отступ снизу для всей сетки */
 }
 
 /* Специальные размеры для блоков */
 .stats-section {
-  grid-column: span 2; /* Общая статистика занимает 2 колонки */
-  order: 1; /* Первый блок */
+  grid-column: 1 / -1; /* Общая статистика занимает всю ширину */
+}
+
+.operators-section {
+  grid-column: span 1; /* Операторы занимают 1 колонку */
 }
 
 .questions-section {
   grid-column: span 1; /* Вопросы занимают 1 колонку */
-  order: 2; /* Второй блок */
-  display: flex;
-  flex-direction: column;
 }
 
 .tags-section {
-  grid-column: span 1; /* Теги занимают 1 колонку */
-  order: 3; /* Третий блок */
-  display: flex;
-  flex-direction: column;
-}
-
-.operators-section {
-  grid-column: span 2; /* Операторы занимают 2 колонки */
-  order: 4; /* Четвертый блок */
+  grid-column: 1 / -1; /* Теги занимают всю ширину */
 }
 
 /* Секции в стиле дашборда */
@@ -78,6 +69,7 @@
   padding: 24px;
   border: 1px solid var(--color-border);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  margin-bottom: 24px;
 }
 
 .stats-section:last-child,
@@ -99,69 +91,63 @@
 /* Статистические карточки в стиле дашборда */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
 }
 
 .stat-card {
   background: var(--color-bg);
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 6px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  min-height: 120px;
+  height: 90px;
   border: 1px solid var(--color-border);
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   cursor: pointer;
   position: relative;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .stat-card:hover {
   background: var(--color-bg-panel);
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border-color: var(--color-text-muted);
 }
 
 .stat-icon {
-  font-size: 1.5rem;
-  margin-bottom: 12px;
-  color: #FFD700;
-  text-align: center;
+  font-size: 1rem;
+  margin-bottom: 6px;
+  color: #FFD700; /* Желтый цвет как на фото */
 }
 
 .stat-content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  text-align: center;
+  justify-content: space-between;
 }
 
 .stat-value {
-  font-size: 1.8rem;
-  font-weight: 700;
+  font-size: 0.9rem;
+  font-weight: 600;
   color: var(--color-text);
-  margin: 0 0 8px 0;
-  line-height: 1;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  margin: 0 0 4px 0;
+  line-height: 1.1;
 }
 
 .stat-label {
-  font-size: 0.9rem;
+  font-size: 0.7rem;
   color: var(--color-text-muted);
-  margin: 0 0 4px 0;
+  margin: 0 0 auto 0;
   line-height: 1.2;
-  font-weight: 500;
 }
 
 .stat-footer {
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   color: var(--color-text-muted);
-  margin-top: 8px;
-  opacity: 0.6;
-  font-weight: 400;
+  margin-top: 6px;
+  opacity: 0.4;
 }
 
 /* Операторы */
@@ -228,63 +214,45 @@
 /* Адаптивность */
 @media (min-width: 1400px) {
   .analytics-grid {
-    grid-template-columns: repeat(3, 1fr); /* На больших экранах 3 колонки */
+    grid-template-columns: 1fr 1fr 1fr; /* На больших экранах 3 колонки */
     max-width: 1600px;
+    gap: 32px;
   }
   
   .stats-section {
-    grid-column: span 3; /* Статистика занимает всю ширину */
-    order: 1;
-  }
-  
-  .questions-section {
-    grid-column: span 1;
-    order: 2;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .tags-section {
-    grid-column: span 2;
-    order: 3;
-    display: flex;
-    flex-direction: column;
+    grid-column: 1 / -1; /* Статистика занимает всю ширину */
   }
   
   .operators-section {
-    grid-column: span 3; /* Операторы занимают всю ширину */
-    order: 4;
+    grid-column: span 1; /* Операторы занимают 1 колонку */
+  }
+  
+  .questions-section {
+    grid-column: span 1; /* Вопросы занимают 1 колонку */
+  }
+  
+  .tags-section {
+    grid-column: span 1; /* Теги занимают 1 колонку */
   }
 }
 
 @media (max-width: 1200px) {
   .analytics-grid {
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    grid-template-columns: 1fr 1fr;
     gap: 20px;
   }
   
   .stats-section {
-    grid-column: span 1; /* На средних экранах статистика занимает 1 колонку */
-    order: 1;
+    grid-column: 1 / -1; /* Статистика занимает всю ширину */
   }
   
+  .operators-section,
   .questions-section {
     grid-column: span 1;
-    order: 2;
-    display: flex;
-    flex-direction: column;
   }
   
   .tags-section {
-    grid-column: span 1;
-    order: 3;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .operators-section {
-    grid-column: span 1;
-    order: 4;
+    grid-column: 1 / -1; /* Теги занимают всю ширину */
   }
 }
 
@@ -305,7 +273,16 @@
   .analytics-grid {
     grid-template-columns: 1fr;
     gap: 16px;
-    padding-bottom: 20px; /* Отступ снизу для планшетов */
+  }
+  
+  .stats-section {
+    grid-column: 1;
+  }
+  
+  .operators-section,
+  .questions-section,
+  .tags-section {
+    grid-column: 1;
   }
   
   .stats-section,
@@ -313,6 +290,7 @@
   .questions-section,
   .tags-section {
     padding: 20px;
+    margin-bottom: 20px;
   }
   
   .stats-section:last-child,
@@ -324,25 +302,13 @@
   
   .stats-grid {
     grid-template-columns: 1fr;
-    gap: 12px;
+    gap: 6px;
   }
   
   .stat-card {
-    min-height: 100px;
-    padding: 16px;
-  }
-  
-  .stat-icon {
-    font-size: 1.3rem;
-    margin-bottom: 10px;
-  }
-  
-  .stat-value {
-    font-size: 1.5rem;
-  }
-  
-  .stat-label {
-    font-size: 0.85rem;
+    height: auto;
+    min-height: 80px;
+    padding: 10px;
   }
   
   .operator-item {
@@ -367,8 +333,18 @@
   }
   
   .analytics-grid {
+    grid-template-columns: 1fr;
     gap: 12px;
-    padding-bottom: 16px; /* Отступ снизу для мобильных */
+  }
+  
+  .stats-section {
+    grid-column: 1;
+  }
+  
+  .operators-section,
+  .questions-section,
+  .tags-section {
+    grid-column: 1;
   }
   
   .stats-section,
@@ -376,6 +352,7 @@
   .questions-section,
   .tags-section {
     padding: 16px;
+    margin-bottom: 16px;
   }
   
   .stats-section:last-child,
@@ -531,7 +508,6 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  flex: 1;
 }
 
 .question-item {
@@ -581,7 +557,6 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  flex: 1;
 }
 
 .tag-item {
@@ -732,34 +707,12 @@
   line-height: 1.5;
 }
 
-.no-data-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 400px;
-  padding: 40px 20px;
-}
-
-.no-data-message {
+.no-data {
   text-align: center;
-  max-width: 500px;
-}
-
-.no-data-message h2 {
-  font-size: 2rem;
-  font-weight: 300;
-  color: var(--color-text-primary);
-  margin: 0 0 16px 0;
-  letter-spacing: -0.02em;
-}
-
-.no-data-message p {
-  font-size: 1.1rem;
-  font-weight: 400;
+  padding: 40px 20px;
   color: var(--color-text-muted);
-  margin: 0;
-  line-height: 1.5;
-  opacity: 0.8;
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
 }
 
 /* Адаптивность */
@@ -914,18 +867,9 @@
     font-size: var(--fs-small);
   }
   
-  .no-data-container {
-    min-height: 300px;
+  .no-data {
     padding: 30px 15px;
-  }
-  
-  .no-data-message h2 {
-    font-size: 1.5rem;
-    margin-bottom: 12px;
-  }
-  
-  .no-data-message p {
-    font-size: 1rem;
+    font-size: var(--fs-small);
   }
 }
 
@@ -967,248 +911,5 @@
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-/* Стили для персональной страницы оператора */
-.agent-header {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  margin-bottom: 24px;
-  padding: 0 0 16px 0;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.back-button {
-  background: var(--color-bg-panel);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 10px 20px;
-  color: var(--color-text);
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.back-button:hover {
-  background: var(--color-bg);
-  border-color: var(--color-text-muted);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.agent-profile {
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.agent-info-card {
-  background: var(--color-bg-panel);
-  border-radius: 12px;
-  padding: 24px;
-  border: 1px solid var(--color-border);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-}
-
-.agent-details {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-}
-
-.info-section {
-  background: var(--color-bg);
-  border-radius: 8px;
-  padding: 20px;
-  border: 1px solid var(--color-border);
-}
-
-.info-section h3 {
-  color: var(--color-text);
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin: 0 0 16px 0;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 16px;
-}
-
-.info-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  background: var(--color-bg-panel);
-  border-radius: 6px;
-  margin-bottom: 8px;
-}
-
-.info-item:last-child {
-  border-bottom: none;
-}
-
-.info-label {
-  color: var(--color-text-muted);
-  font-size: 0.95rem;
-  font-weight: 600;
-  min-width: 120px;
-}
-
-.info-value {
-  color: var(--color-text);
-  font-size: 0.95rem;
-  font-weight: 500;
-  text-align: right;
-  flex: 1;
-  margin-left: 16px;
-  word-break: break-word;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 16px;
-}
-
-.stat-card {
-  background: var(--color-bg-panel);
-  border-radius: 8px;
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border: 1px solid var(--color-border);
-  transition: all 0.2s ease;
-}
-
-.stat-card:hover {
-  background: var(--color-bg);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.stat-icon {
-  font-size: 1.5rem;
-}
-
-.stat-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.stat-value {
-  color: var(--color-text);
-  font-size: 1.2rem;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.stat-label {
-  color: var(--color-text-muted);
-  font-size: 0.8rem;
-  font-weight: 500;
-  margin-top: 4px;
-}
-
-/* Адаптивность для персональной страницы */
-@media (max-width: 768px) {
-  .agent-profile {
-    max-width: 100%;
-    padding: 0 16px;
-  }
-  
-  .agent-header {
-    margin-bottom: 20px;
-    padding: 0 0 12px 0;
-  }
-  
-  .back-button {
-    padding: 8px 16px;
-    font-size: 0.85rem;
-  }
-  
-  .agent-info-card {
-    padding: 16px;
-  }
-  
-  .agent-details {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-  
-  .info-grid {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-  
-  .info-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 12px;
-  }
-  
-  .info-label {
-    min-width: auto;
-    font-weight: 700;
-  }
-  
-  .info-value {
-    text-align: left;
-    margin-left: 0;
-    font-weight: 600;
-  }
-  
-  .stats-grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-  
-  .stat-card {
-    padding: 14px;
-    min-height: 90px;
-  }
-  
-  .stat-icon {
-    font-size: 1.2rem;
-    margin-bottom: 8px;
-  }
-  
-  .stat-value {
-    font-size: 1.4rem;
-  }
-  
-  .stat-label {
-    font-size: 0.8rem;
-  }
-}
-
-/* Обеспечение одинаковой высоты для блоков вопросов и тегов */
-@media (min-width: 768px) {
-  .questions-section,
-  .tags-section {
-    min-height: 280px; /* Минимальная высота для блоков */
-  }
-  
-  .questions-list,
-  .tags-list {
-    justify-content: flex-start;
-  }
-  
-  /* Если в блоке мало элементов, растягиваем их */
-  .questions-list:has(.question-item:nth-child(1):last-child),
-  .tags-list:has(.tag-item:nth-child(1):last-child) {
-    justify-content: center;
   }
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './Calendar.css';
 
-export const Calendar = ({ value, onChange, placeholder = "Select date", isOpen, onOpen, onClose }) => {
+export const Calendar = ({ value, onChange, placeholder = "Select date", isOpen, onOpen, onClose, minDate, maxDate }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [position, setPosition] = useState({ top: true, left: true });
   const calendarRef = useRef(null);
@@ -75,24 +75,72 @@ export const Calendar = ({ value, onChange, placeholder = "Select date", isOpen,
     return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
   };
 
+  const isDateDisabled = (day) => {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    
+    if (minDate && date < minDate) {
+      return true;
+    }
+    
+    if (maxDate && date > maxDate) {
+      return true;
+    }
+    
+    return false;
+  };
+
   const handleDateSelect = (day) => {
+    if (isDateDisabled(day)) {
+      return; // Не позволяем выбирать заблокированные даты
+    }
+    
     const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-    const formattedDate = newDate.toISOString().split('T')[0];
+    // Используем локальное время для избежания проблем с часовыми поясами
+    const year = newDate.getFullYear();
+    const month = String(newDate.getMonth() + 1).padStart(2, '0');
+    const dayStr = String(newDate.getDate()).padStart(2, '0');
+    const formattedDate = `${year}-${month}-${dayStr}`;
+    
     onChange(formattedDate);
     if (onClose) onClose();
   };
 
   const handlePrevMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
+    const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1);
+    
+    // Проверяем, можно ли перейти к предыдущему месяцу
+    if (minDate) {
+      const firstDayOfNewMonth = new Date(newDate.getFullYear(), newDate.getMonth(), 1);
+      if (firstDayOfNewMonth < minDate) {
+        return; // Не позволяем переходить к месяцу раньше minDate
+      }
+    }
+    
+    setCurrentDate(newDate);
   };
 
   const handleNextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+    const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1);
+    
+    // Проверяем, можно ли перейти к следующему месяцу
+    if (maxDate) {
+      const lastDayOfNewMonth = new Date(newDate.getFullYear(), newDate.getMonth() + 1, 0);
+      if (lastDayOfNewMonth > maxDate) {
+        return; // Не позволяем переходить к месяцу позже maxDate
+      }
+    }
+    
+    setCurrentDate(newDate);
   };
 
   const handleToday = () => {
     const today = new Date();
-    const formattedDate = today.toISOString().split('T')[0];
+    // Используем локальное время для избежания проблем с часовыми поясами
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const dayStr = String(today.getDate()).padStart(2, '0');
+    const formattedDate = `${year}-${month}-${dayStr}`;
+    
     onChange(formattedDate);
     if (onClose) onClose();
   };
@@ -115,11 +163,12 @@ export const Calendar = ({ value, onChange, placeholder = "Select date", isOpen,
         selectedDate.getFullYear() === currentDate.getFullYear();
       
       const isToday = new Date().toDateString() === new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toDateString();
+      const isDisabled = isDateDisabled(day);
 
       days.push(
         <div
           key={day}
-          className={`calendar-day ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''}`}
+          className={`calendar-day ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''} ${isDisabled ? 'disabled' : ''}`}
           onClick={() => handleDateSelect(day)}
         >
           {day}

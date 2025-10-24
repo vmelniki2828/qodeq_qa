@@ -169,6 +169,17 @@
   background: transparent;
 }
 
+.calendar-day.disabled {
+  color: var(--color-text-muted);
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: transparent;
+}
+
+.calendar-day.disabled:hover {
+  background: transparent;
+}
+
 .calendar-footer {
   display: flex;
   gap: 8px;

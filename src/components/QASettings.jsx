@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { SettingOutlined } from '@ant-design/icons';
-import { FiEdit3 } from 'react-icons/fi';
+import { FiEdit3, FiCheck } from 'react-icons/fi';
 import './QASettings.css';
 
 export const QASettings = () => {
@@ -48,7 +48,13 @@ export const QASettings = () => {
   
   // Состояния для редактирования интеграции
   const [editingIntegration, setEditingIntegration] = useState(null);
-  const [isEditIntegrationModalOpen, setIsEditIntegrationModalOpen] = useState(false);
+  const [isEditIntegrationSidebarOpen, setIsEditIntegrationSidebarOpen] = useState(false);
+  const [editIntegrationFormData, setEditIntegrationFormData] = useState({
+    name: '',
+    type: 'livechat',
+    username: '',
+    secret_key: ''
+  });
   
   // Состояние для выбранного языка
   const [selectedLanguage, setSelectedLanguage] = useState('RU');
@@ -58,6 +64,22 @@ export const QASettings = () => {
   const [promptsError, setPromptsError] = useState('');
   const [isEditingMode, setIsEditingMode] = useState(false);
   const [isUpdatingPrompt, setIsUpdatingPrompt] = useState(false);
+  
+  // Состояния для редактирования лимита
+  const [isEditingLimit, setIsEditingLimit] = useState(false);
+  const [limitValue, setLimitValue] = useState('');
+  const [isUpdatingLimit, setIsUpdatingLimit] = useState(false);
+  
+  // Состояния для редактирования минимум сообщений
+  const [isEditingMinMessages, setIsEditingMinMessages] = useState(false);
+  const [minMessagesValue, setMinMessagesValue] = useState('');
+  const [isUpdatingMinMessages, setIsUpdatingMinMessages] = useState(false);
+  
+  // Состояния для редактирования количества выгрузок
+  const [isEditingDownloadsCount, setIsEditingDownloadsCount] = useState(false);
+  const [downloadsCountValue, setDownloadsCountValue] = useState('');
+  const [isUpdatingDownloadsCount, setIsUpdatingDownloadsCount] = useState(false);
+  
   const [isUpdatingIntegration, setIsUpdatingIntegration] = useState(false);
   const [isDeletingIntegration, setIsDeletingIntegration] = useState(false);
   
@@ -84,7 +106,13 @@ export const QASettings = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isEditProjectSidebarOpen, setIsEditProjectSidebarOpen] = useState(false);
+  const [editProjectFormData, setEditProjectFormData] = useState({
+    title: '',
+    is_active: false,
+    url: '',
+    code: ''
+  });
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState({
@@ -100,7 +128,7 @@ export const QASettings = () => {
   const [agentFormData, setAgentFormData] = useState({
     name: '',
     username: '',
-    type: 'customer',
+    type: 'agent',
     lcid: '',
     is_active: true
   });
@@ -130,6 +158,7 @@ export const QASettings = () => {
 
         const data = await response.json();
         setSettingsData(data);
+        setError(''); // Очищаем ошибку при успешной загрузке
       } catch (err) {
         console.error('Ошибка загрузки настроек:', err);
         setError('Ошибка загрузки данных настроек');
@@ -155,10 +184,9 @@ export const QASettings = () => {
     
     // Закрываем все сайдбары при переходе между блоками
     setIsCreateIntegrationSidebarOpen(false);
-    setIsEditIntegrationModalOpen(false);
+    setIsEditIntegrationSidebarOpen(false);
     setIsCreateProjectSidebarOpen(false);
     setIsCreateModalOpen(false);
-    setIsEditModalOpen(false);
     setIsCreateAgentSidebarOpen(false);
     // setIsCreateAgentModalOpen(false); // Удалено - используем сайдбар
     setIsEditAgentModalOpen(false);
@@ -327,6 +355,150 @@ export const QASettings = () => {
     } finally {
       setIsUpdatingPrompt(false);
     }
+  };
+
+  // Функция для обновления лимита
+  const updateLimit = async () => {
+    if (!limitValue) return;
+    
+    try {
+      setIsUpdatingLimit(true);
+
+      const response = await fetch('http://185.138.164.88/api/v1/settings/main/', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          limit: parseInt(limitValue)
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Обновляем локальное состояние
+      setSettingsData(prev => ({
+        ...prev,
+        limit: parseInt(limitValue)
+      }));
+
+      // Выходим из режима редактирования
+      setIsEditingLimit(false);
+      setLimitValue('');
+      
+      console.log('Лимит успешно обновлен:', limitValue);
+    } catch (err) {
+      console.error('Ошибка обновления лимита:', err);
+      alert('Ошибка обновления лимита');
+    } finally {
+      setIsUpdatingLimit(false);
+    }
+  };
+
+  // Функция для отмены редактирования
+  const cancelLimitEdit = () => {
+    setIsEditingLimit(false);
+    setLimitValue('');
+  };
+
+  // Функция для обновления минимум сообщений
+  const updateMinMessages = async () => {
+    if (!minMessagesValue) return;
+    
+    try {
+      setIsUpdatingMinMessages(true);
+
+      const response = await fetch('http://185.138.164.88/api/v1/settings/main/', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          min_messages_count: parseInt(minMessagesValue)
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Обновляем локальное состояние
+      setSettingsData(prev => ({
+        ...prev,
+        min_messages_count: parseInt(minMessagesValue)
+      }));
+
+      // Выходим из режима редактирования
+      setIsEditingMinMessages(false);
+      setMinMessagesValue('');
+      
+      console.log('Минимум сообщений успешно обновлен:', minMessagesValue);
+    } catch (err) {
+      console.error('Ошибка обновления минимум сообщений:', err);
+      alert('Ошибка обновления минимум сообщений');
+    } finally {
+      setIsUpdatingMinMessages(false);
+    }
+  };
+
+  // Функция для отмены редактирования минимум сообщений
+  const cancelMinMessagesEdit = () => {
+    setIsEditingMinMessages(false);
+    setMinMessagesValue('');
+  };
+
+  // Функция для обновления количества выгрузок
+  const updateDownloadsCount = async () => {
+    if (!downloadsCountValue) return;
+    
+    const count = parseInt(downloadsCountValue);
+    if (count > 2) {
+      alert('Максимальное количество выгрузок: 2');
+      return;
+    }
+    
+    try {
+      setIsUpdatingDownloadsCount(true);
+
+      const response = await fetch('http://185.138.164.88/api/v1/settings/main/', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          working_shift: count
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Обновляем локальное состояние
+      setSettingsData(prev => ({
+        ...prev,
+        working_shift: count
+      }));
+
+      // Выходим из режима редактирования
+      setIsEditingDownloadsCount(false);
+      setDownloadsCountValue('');
+      
+      console.log('Количество выгрузок успешно обновлено:', count);
+    } catch (err) {
+      console.error('Ошибка обновления количества выгрузок:', err);
+      alert('Ошибка обновления количества выгрузок');
+    } finally {
+      setIsUpdatingDownloadsCount(false);
+    }
+  };
+
+  // Функция для отмены редактирования количества выгрузок
+  const cancelDownloadsCountEdit = () => {
+    setIsEditingDownloadsCount(false);
+    setDownloadsCountValue('');
   };
 
   // Функция для загрузки тегов
@@ -546,27 +718,32 @@ export const QASettings = () => {
     });
   };
 
-  const openEditModal = (project) => {
+  const openEditProjectSidebar = (project) => {
     setEditingProject(project);
-    setFormData({
+    setEditProjectFormData({
       title: project.title,
       is_active: project.is_active,
       url: project.url,
       code: project.code
     });
-    setIsEditModalOpen(true);
+    setIsEditProjectSidebarOpen(true);
   };
 
-  const closeEditModal = (e) => {
-    if (e) {
-      e.stopPropagation();
-    }
-    setIsEditModalOpen(false);
+  const handleEditProjectInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setEditProjectFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const closeEditProjectSidebar = () => {
+    setIsEditProjectSidebarOpen(false);
     setIsUpdating(false);
     setEditingProject(null);
-    setFormData({
+    setEditProjectFormData({
       title: '',
-      is_active: true,
+      is_active: false,
       url: '',
       code: ''
     });
@@ -575,7 +752,7 @@ export const QASettings = () => {
   const handleUpdateProject = async (e) => {
     e.stopPropagation();
     
-    if (!formData.title.trim() || !formData.url.trim() || !formData.code.trim()) {
+    if (!editProjectFormData.title.trim() || !editProjectFormData.url.trim() || !editProjectFormData.code.trim()) {
       alert('Пожалуйста, заполните все обязательные поля');
       return;
     }
@@ -589,10 +766,10 @@ export const QASettings = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title: formData.title.trim(),
-          is_active: formData.is_active,
-          // url: formData.url.trim(),
-          code: formData.code.trim()
+          title: editProjectFormData.title.trim(),
+          is_active: editProjectFormData.is_active,
+          url: editProjectFormData.url.trim(),
+          code: editProjectFormData.code.trim()
         }),
       });
 
@@ -604,7 +781,7 @@ export const QASettings = () => {
       const result = await response.json();
       console.log('Проект успешно обновлен:', result);
 
-      closeEditModal();
+      closeEditProjectSidebar();
       if (activeTab === 'projects') {
         fetchProjects();
       }
@@ -619,7 +796,7 @@ export const QASettings = () => {
   };
 
   const handleDeleteProject = async (projectId) => {
-    if (!window.confirm('Вы уверены, что хотите удалить эту группу?')) {
+    if (!window.confirm('Вы уверены, что хотите удалить этот проект?\n\n⚠️ ВНИМАНИЕ: При удалении проекта будут потеряны ВСЕ данные, связанные с этим проектом, включая:\n• Все чаты и сообщения\n• История переписки\n• Статистика и аналитика\n• Настройки и конфигурации\n• Интеграции и подключения\n\nЭто действие НЕОБРАТИМО!')) {
       return;
     }
     
@@ -738,7 +915,7 @@ export const QASettings = () => {
   const openEditAgentModal = (agent) => {
     setEditingAgent(agent);
     setAgentFormData({
-      type: agent.type || 'customer',
+      type: agent.type || 'agent',
       lcid: agent.lcid || '',
       name: agent.name || '',
       available: agent.available !== undefined ? agent.available : true
@@ -869,6 +1046,14 @@ export const QASettings = () => {
     }));
   };
 
+  const handleEditIntegrationInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setEditIntegrationFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
   const handleCreateIntegration = async (e) => {
     e.stopPropagation();
     
@@ -915,25 +1100,22 @@ export const QASettings = () => {
     }
   };
 
-  const openEditIntegrationModal = (integration) => {
+  const openEditIntegrationSidebar = (integration) => {
     setEditingIntegration(integration);
-    setIntegrationFormData({
+    setEditIntegrationFormData({
       name: integration.name || '',
       type: integration.type || 'livechat',
       username: integration.username || '',
       secret_key: integration.secret_key || ''
     });
-    setIsEditIntegrationModalOpen(true);
+    setIsEditIntegrationSidebarOpen(true);
   };
 
-  const closeEditIntegrationModal = (e) => {
-    if (e) {
-      e.stopPropagation();
-    }
-    setIsEditIntegrationModalOpen(false);
+  const closeEditIntegrationSidebar = () => {
+    setIsEditIntegrationSidebarOpen(false);
     setIsUpdatingIntegration(false);
     setEditingIntegration(null);
-    setIntegrationFormData({
+    setEditIntegrationFormData({
       name: '',
       type: 'livechat',
       username: '',
@@ -944,7 +1126,7 @@ export const QASettings = () => {
   const handleUpdateIntegration = async (e) => {
     e.stopPropagation();
     
-    if (!integrationFormData.name.trim() || !integrationFormData.username.trim() || !integrationFormData.secret_key.trim()) {
+    if (!editIntegrationFormData.name.trim() || !editIntegrationFormData.username.trim() || !editIntegrationFormData.secret_key.trim()) {
       alert('Пожалуйста, заполните все обязательные поля');
       return;
     }
@@ -958,9 +1140,9 @@ export const QASettings = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: integrationFormData.name.trim(),
-          username: integrationFormData.username.trim(),
-          secret_key: integrationFormData.secret_key.trim()
+          name: editIntegrationFormData.name.trim(),
+          username: editIntegrationFormData.username.trim(),
+          secret_key: editIntegrationFormData.secret_key.trim()
         }),
       });
 
@@ -972,7 +1154,7 @@ export const QASettings = () => {
       const result = await response.json();
       console.log('Интеграция успешно обновлена:', result);
 
-      closeEditIntegrationModal();
+      closeEditIntegrationSidebar();
       if (activeTab === 'integrations') {
         fetchIntegrations();
       }
@@ -987,7 +1169,7 @@ export const QASettings = () => {
   };
 
   const handleDeleteIntegration = async (integrationId) => {
-    if (!window.confirm('Вы уверены, что хотите удалить эту интеграцию?')) {
+    if (!window.confirm('Вы уверены, что хотите удалить эту интеграцию?\n\n⚠️ ВНИМАНИЕ: При удалении интеграции будут потеряны ВСЕ данные, связанные с этой интеграцией, включая:\n• Все чаты и сообщения\n• История переписки\n• Статистика и аналитика\n• Настройки и конфигурации\n\nЭто действие НЕОБРАТИМО!')) {
       return;
     }
     
@@ -1073,7 +1255,7 @@ export const QASettings = () => {
     <div className="page-content">
       <div className="qa-settings">
         
-        {error && (
+        {error && !settingsData && (
           <div className="error-container">
             <div className="error-message">
               <h3>Ошибка загрузки</h3>
@@ -1090,6 +1272,13 @@ export const QASettings = () => {
                   <div className="loading-spinner"></div>
                   <p className="loading-text">Загрузка настроек...</p>
                 </div>
+              ) : error ? (
+                <div className="error-container">
+                  <div className="error-message">
+                    <h3>Ошибка загрузки</h3>
+                    <p>{error}</p>
+                  </div>
+                </div>
               ) : settingsData ? (
                 <div className="settings-dashboard">
                   <div className="dashboard-grid">
@@ -1099,21 +1288,149 @@ export const QASettings = () => {
                         <h3 className="card-title">Основные настройки</h3>
                       </div>
                       <div className="card-content">
-                        <div className="stat-item">
-                          <div className="stat-label">Лимит</div>
-                          <div className="stat-value">{settingsData.limit}</div>
+                        <div className="stat-item stat-item-editable">
+                          <div className="stat-item-header">
+                            <div className="stat-label">Лимит</div>
+                            {!isEditingLimit ? (
+                              <button
+                                className="stat-edit-btn"
+                                onClick={() => {
+                                  setIsEditingLimit(true);
+                                  setLimitValue(settingsData.limit.toString());
+                                }}
+                              >
+                                <FiEdit3 size={16} />
+                              </button>
+                            ) : (
+                              <button
+                                className="stat-save-btn"
+                                onClick={updateLimit}
+                                disabled={isUpdatingLimit || !limitValue}
+                              >
+                                <FiCheck size={16} />
+                              </button>
+                            )}
+                          </div>
+                          {isEditingLimit ? (
+                            <div className="stat-edit">
+                              <input
+                                type="number"
+                                value={limitValue}
+                                onChange={(e) => setLimitValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Escape') {
+                                    cancelLimitEdit();
+                                  } else if (e.key === 'Enter') {
+                                    updateLimit();
+                                  }
+                                }}
+                                placeholder="Введите новый лимит"
+                                className="stat-input"
+                                disabled={isUpdatingLimit}
+                                autoFocus
+                              />
+                            </div>
+                          ) : (
+                            <div className="stat-value">{settingsData.limit}</div>
+                          )}
                           <div className="stat-description">Максимальное количество элементов</div>
                         </div>
                         
-                        <div className="stat-item">
-                          <div className="stat-label">Рабочая смена</div>
-                          <div className="stat-value">{settingsData.working_shift}</div>
-                          <div className="stat-description">Номер текущей смены</div>
+                        <div className="stat-item stat-item-editable">
+                          <div className="stat-item-header">
+                            <div className="stat-label">Количество выгрузок</div>
+                            {!isEditingDownloadsCount ? (
+                              <button
+                                className="stat-edit-btn"
+                                onClick={() => {
+                                  setIsEditingDownloadsCount(true);
+                                  setDownloadsCountValue(settingsData.working_shift.toString());
+                                }}
+                              >
+                                <FiEdit3 size={16} />
+                              </button>
+                            ) : (
+                              <button
+                                className="stat-save-btn"
+                                onClick={updateDownloadsCount}
+                                disabled={isUpdatingDownloadsCount || !downloadsCountValue}
+                              >
+                                <FiCheck size={16} />
+                              </button>
+                            )}
+                          </div>
+                          {isEditingDownloadsCount ? (
+                            <div className="stat-edit">
+                              <input
+                                type="number"
+                                min="1"
+                                max="2"
+                                value={downloadsCountValue}
+                                onChange={(e) => setDownloadsCountValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Escape') {
+                                    cancelDownloadsCountEdit();
+                                  } else if (e.key === 'Enter') {
+                                    updateDownloadsCount();
+                                  }
+                                }}
+                                placeholder="Введите количество выгрузок (1-2)"
+                                className="stat-input"
+                                disabled={isUpdatingDownloadsCount}
+                                autoFocus
+                              />
+                            </div>
+                          ) : (
+                            <div className="stat-value">{settingsData.working_shift}</div>
+                          )}
+                          <div className="stat-description">Максимальное количество выгрузок данных</div>
                         </div>
                         
-                        <div className="stat-item">
-                          <div className="stat-label">Минимум сообщений</div>
-                          <div className="stat-value">{settingsData.min_messages_count}</div>
+                        <div className="stat-item stat-item-editable">
+                          <div className="stat-item-header">
+                            <div className="stat-label">Минимум сообщений</div>
+                            {!isEditingMinMessages ? (
+                              <button
+                                className="stat-edit-btn"
+                                onClick={() => {
+                                  setIsEditingMinMessages(true);
+                                  setMinMessagesValue(settingsData.min_messages_count.toString());
+                                }}
+                              >
+                                <FiEdit3 size={16} />
+                              </button>
+                            ) : (
+                              <button
+                                className="stat-save-btn"
+                                onClick={updateMinMessages}
+                                disabled={isUpdatingMinMessages || !minMessagesValue}
+                              >
+                                <FiCheck size={16} />
+                              </button>
+                            )}
+                          </div>
+                          {isEditingMinMessages ? (
+                            <div className="stat-edit">
+                              <input
+                                type="number"
+                                value={minMessagesValue}
+                                onChange={(e) => setMinMessagesValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Escape') {
+                                    cancelMinMessagesEdit();
+                                  } else if (e.key === 'Enter') {
+                                    updateMinMessages();
+                                  }
+                                }}
+                                placeholder="Введите минимум сообщений"
+                                className="stat-input"
+                                disabled={isUpdatingMinMessages}
+                                autoFocus
+                              />
+                            </div>
+                          ) : (
+                            <div className="stat-value">{settingsData.min_messages_count}</div>
+                          )}
                           <div className="stat-description">Минимальное количество сообщений</div>
                         </div>
                         
@@ -1336,7 +1653,7 @@ export const QASettings = () => {
                               <div className="integration-actions">
                                 <button 
                                   className="integration-action-btn edit"
-                                  onClick={() => openEditIntegrationModal(integration)}
+                                  onClick={() => openEditIntegrationSidebar(integration)}
                                   title="Редактировать интеграцию"
                                 >
                                   <SettingOutlined />
@@ -1361,11 +1678,6 @@ export const QASettings = () => {
                               <div className="integration-detail-item">
                                 <span className="detail-label">Username</span>
                                 <span className="detail-value">{integration.username}</span>
-                              </div>
-                              
-                              <div className="integration-detail-item">
-                                <span className="detail-label">ID</span>
-                                <span className="detail-id">{integration.id}</span>
                               </div>
                               
                               <div className="integration-detail-item">
@@ -1424,7 +1736,7 @@ export const QASettings = () => {
                           <div className="project-actions">
                             <button 
                               className="project-action-btn edit"
-                              onClick={() => openEditModal(project)}
+                              onClick={() => openEditProjectSidebar(project)}
                               title="Редактировать проект"
                             >
                               <SettingOutlined />
@@ -1458,10 +1770,6 @@ export const QASettings = () => {
                             </a>
                           </div>
                           
-                          <div className="project-detail-item">
-                            <span className="detail-label">ID:</span>
-                            <span className="detail-id">{project.id}</span>
-                          </div>
                         </div>
                       </div>
                     ))}
@@ -1497,18 +1805,16 @@ export const QASettings = () => {
                   
                   <div className="agents-list">
                     {agentsData.map((agent) => (
-                      <div key={agent.id} className="agent-item">
-                        <div className="agent-main">
-                          <div className="agent-name">{agent.name || agent.username || 'Агент'}</div>
-                        </div>
-                        
-                        <div className={`agent-status ${agent.is_active ? 'active' : 'inactive'}`}>
-                          {agent.is_active ? 'Активен' : 'Неактивен'}
-                        </div>
-                        
-                        <div className="agent-id">{agent.id}</div>
-                        
-                        <div className="agent-actions">
+                        <div key={agent.id} className="agent-item">
+                          <div className="agent-main">
+                            <div className="agent-name">{agent.name || 'Агент'}</div>
+                            <div className="agent-type">{agent.type === 'agent' ? 'Agent' : agent.type === 'bot' ? 'Bot' : agent.type}</div>
+                            <div className="agent-lcid">{agent.lcid || 'Не указан'}</div>
+                            <div className={`agent-status ${agent.available ? 'available' : 'unavailable'}`}>
+                              {agent.available ? 'Доступен' : 'Недоступен'}
+                            </div>
+                          </div>
+                          <div className="agent-actions">
                           <button 
                             className="agent-edit-btn" 
                             onClick={() => openEditAgentModal(agent)}
@@ -1824,77 +2130,77 @@ export const QASettings = () => {
         </div>
       )}
       
-      {/* Модальное окно редактирования группы */}
-      {isEditModalOpen && (
-        <div className="modal-overlay" onClick={closeEditModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="modal-title">Редактировать группу</h3>
-              <button className="modal-close" onClick={closeEditModal}>
+      {/* Боковое меню редактирования проекта */}
+      {isEditProjectSidebarOpen && (
+        <div className="sidebar-overlay" onClick={closeEditProjectSidebar}>
+          <div className="sidebar" onClick={(e) => e.stopPropagation()}>
+            <div className="sidebar-header">
+              <h3 className="sidebar-title">Редактировать проект</h3>
+              <button className="sidebar-close" onClick={closeEditProjectSidebar}>
                 ×
               </button>
             </div>
             
-            <div className="modal-body">
+            <div className="sidebar-body">
               <div className="form-group">
                 <label className="form-label">Название</label>
                 <input
                   type="text"
                   name="title"
-                  value={formData.title}
-                  onChange={handleInputChange}
+                  value={editProjectFormData.title}
+                  onChange={handleEditProjectInputChange}
                   className="form-input"
-                  placeholder="Введите название группы"
+                  placeholder="Введите название проекта"
                   required
                 />
               </div>
               
               <div className="form-group">
-                <label className="form-label">URL</label>
-                <input
-                  type="url"
-                  name="url"
-                  value={formData.url}
-                  onChange={handleInputChange}
-                  className="form-input"
-                  placeholder="https://example.com/"
-                  required
-                />
-              </div>
-              
-              <div className="form-group">
-                <label className="form-label">Код</label>
+                <label className="form-label">Код проекта</label>
                 <input
                   type="text"
                   name="code"
-                  value={formData.code}
-                  onChange={handleInputChange}
+                  value={editProjectFormData.code}
+                  onChange={handleEditProjectInputChange}
                   className="form-input"
-                  placeholder="Введите код группы"
+                  placeholder="Например: MAIN_PROJECT"
                   required
                 />
               </div>
               
               <div className="form-group">
-                <label className="checkbox-label">
+                <label className="form-label">URL проекта</label>
+                <input
+                  type="url"
+                  name="url"
+                  value={editProjectFormData.url}
+                  onChange={handleEditProjectInputChange}
+                  className="form-input"
+                  placeholder="https://example.com"
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label className="form-label">
                   <input
                     type="checkbox"
                     name="is_active"
-                    checked={formData.is_active}
-                    onChange={handleInputChange}
+                    checked={editProjectFormData.is_active}
+                    onChange={handleEditProjectInputChange}
                     className="form-checkbox"
                   />
-                  Активна
+                  Активный проект
                 </label>
               </div>
             </div>
             
-            <div className="modal-footer">
-              <button className="btn-cancel" onClick={closeEditModal}>
+            <div className="form-actions">
+              <button className="btn-cancel" onClick={closeEditProjectSidebar}>
                 Отмена
               </button>
-              <button className="btn-create" onClick={handleUpdateProject} disabled={isUpdating}>
-                {isUpdating ? 'Обновление...' : 'Обновить'}
+              <button className="btn-save" onClick={handleUpdateProject} disabled={isUpdating}>
+                {isUpdating ? 'Сохранение...' : 'Сохранить'}
               </button>
             </div>
           </div>
@@ -1949,9 +2255,8 @@ export const QASettings = () => {
                     className="form-input form-select"
                     required
                   >
-                    <option value="customer">Customer</option>
-                    <option value="admin">Admin</option>
                     <option value="agent">Agent</option>
+                    <option value="bot">Bot</option>
                   </select>
                 </div>
               </div>
@@ -2017,9 +2322,8 @@ export const QASettings = () => {
                   className="form-input"
                   required
                 >
-                  <option value="customer">Customer</option>
                   <option value="agent">Agent</option>
-                  <option value="admin">Admin</option>
+                  <option value="bot">Bot</option>
                 </select>
               </div>
               
@@ -2156,24 +2460,25 @@ export const QASettings = () => {
       )}
       
       {/* Модальное окно редактирования интеграции */}
-      {isEditIntegrationModalOpen && (
-        <div className="modal-overlay" onClick={closeEditIntegrationModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="modal-title">Редактировать интеграцию</h3>
-              <button className="modal-close" onClick={closeEditIntegrationModal}>
+      {/* Сайдбар для редактирования интеграции */}
+      {isEditIntegrationSidebarOpen && (
+        <div className="sidebar-overlay" onClick={closeEditIntegrationSidebar}>
+          <div className="sidebar-content" onClick={(e) => e.stopPropagation()}>
+            <div className="sidebar-header">
+              <h3 className="sidebar-title">Редактировать интеграцию</h3>
+              <button className="sidebar-close" onClick={closeEditIntegrationSidebar}>
                 ×
               </button>
             </div>
             
-            <div className="modal-body">
+            <div className="sidebar-body">
               <div className="form-group">
                 <label className="form-label">Название</label>
                 <input
                   type="text"
                   name="name"
-                  value={integrationFormData.name}
-                  onChange={handleIntegrationInputChange}
+                  value={editIntegrationFormData.name}
+                  onChange={handleEditIntegrationInputChange}
                   className="form-input"
                   placeholder="Введите название интеграции"
                   required
@@ -2181,29 +2486,12 @@ export const QASettings = () => {
               </div>
               
               <div className="form-group">
-                <label className="form-label">Тип</label>
-                <select
-                  name="type"
-                  value={integrationFormData.type}
-                  onChange={handleIntegrationInputChange}
-                  className="form-input"
-                  required
-                >
-                  <option value="livechat">LiveChat</option>
-                  <option value="chatwood">ChatWood</option>
-                  <option value="telegram">Telegram</option>
-                  <option value="whatsapp">WhatsApp</option>
-                  <option value="facebook">Facebook</option>
-                </select>
-              </div>
-              
-              <div className="form-group">
                 <label className="form-label">Username</label>
                 <input
                   type="text"
                   name="username"
-                  value={integrationFormData.username}
-                  onChange={handleIntegrationInputChange}
+                  value={editIntegrationFormData.username}
+                  onChange={handleEditIntegrationInputChange}
                   className="form-input"
                   placeholder="Введите username"
                   required
@@ -2215,22 +2503,22 @@ export const QASettings = () => {
                 <input
                   type="text"
                   name="secret_key"
-                  value={integrationFormData.secret_key}
-                  onChange={handleIntegrationInputChange}
+                  value={editIntegrationFormData.secret_key}
+                  onChange={handleEditIntegrationInputChange}
                   className="form-input"
                   placeholder="Введите secret key"
                   required
                 />
               </div>
-            </div>
-            
-            <div className="modal-footer">
-              <button className="btn-cancel" onClick={closeEditIntegrationModal}>
-                Отмена
-              </button>
-              <button className="btn-create" onClick={handleUpdateIntegration} disabled={isUpdatingIntegration}>
-                {isUpdatingIntegration ? 'Обновление...' : 'Обновить'}
-              </button>
+              
+              <div className="form-actions">
+                <button className="btn-cancel" onClick={closeEditIntegrationSidebar}>
+                  Отмена
+                </button>
+                <button className="btn-create" onClick={handleUpdateIntegration} disabled={isUpdatingIntegration}>
+                  {isUpdatingIntegration ? 'Обновление...' : 'Обновить'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

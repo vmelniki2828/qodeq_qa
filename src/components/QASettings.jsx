@@ -106,13 +106,7 @@ export const QASettings = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
-  const [isEditProjectSidebarOpen, setIsEditProjectSidebarOpen] = useState(false);
-  const [editProjectFormData, setEditProjectFormData] = useState({
-    title: '',
-    is_active: false,
-    url: '',
-    code: ''
-  });
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState({
@@ -187,6 +181,7 @@ export const QASettings = () => {
     setIsEditIntegrationSidebarOpen(false);
     setIsCreateProjectSidebarOpen(false);
     setIsCreateModalOpen(false);
+    setIsEditModalOpen(false);
     setIsCreateAgentSidebarOpen(false);
     // setIsCreateAgentModalOpen(false); // Удалено - используем сайдбар
     setIsEditAgentModalOpen(false);
@@ -718,32 +713,27 @@ export const QASettings = () => {
     });
   };
 
-  const openEditProjectSidebar = (project) => {
+  const openEditModal = (project) => {
     setEditingProject(project);
-    setEditProjectFormData({
+    setFormData({
       title: project.title,
       is_active: project.is_active,
       url: project.url,
       code: project.code
     });
-    setIsEditProjectSidebarOpen(true);
+    setIsEditModalOpen(true);
   };
 
-  const handleEditProjectInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setEditProjectFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
-
-  const closeEditProjectSidebar = () => {
-    setIsEditProjectSidebarOpen(false);
+  const closeEditModal = (e) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    setIsEditModalOpen(false);
     setIsUpdating(false);
     setEditingProject(null);
-    setEditProjectFormData({
+    setFormData({
       title: '',
-      is_active: false,
+      is_active: true,
       url: '',
       code: ''
     });
@@ -752,7 +742,7 @@ export const QASettings = () => {
   const handleUpdateProject = async (e) => {
     e.stopPropagation();
     
-    if (!editProjectFormData.title.trim() || !editProjectFormData.url.trim() || !editProjectFormData.code.trim()) {
+    if (!formData.title.trim() || !formData.url.trim() || !formData.code.trim()) {
       alert('Пожалуйста, заполните все обязательные поля');
       return;
     }
@@ -766,10 +756,10 @@ export const QASettings = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title: editProjectFormData.title.trim(),
-          is_active: editProjectFormData.is_active,
-          url: editProjectFormData.url.trim(),
-          code: editProjectFormData.code.trim()
+          title: formData.title.trim(),
+          is_active: formData.is_active,
+          // url: formData.url.trim(),
+          code: formData.code.trim()
         }),
       });
 
@@ -781,7 +771,7 @@ export const QASettings = () => {
       const result = await response.json();
       console.log('Проект успешно обновлен:', result);
 
-      closeEditProjectSidebar();
+      closeEditModal();
       if (activeTab === 'projects') {
         fetchProjects();
       }
@@ -1736,7 +1726,7 @@ export const QASettings = () => {
                           <div className="project-actions">
                             <button 
                               className="project-action-btn edit"
-                              onClick={() => openEditProjectSidebar(project)}
+                              onClick={() => openEditModal(project)}
                               title="Редактировать проект"
                             >
                               <SettingOutlined />
@@ -2130,77 +2120,77 @@ export const QASettings = () => {
         </div>
       )}
       
-      {/* Боковое меню редактирования проекта */}
-      {isEditProjectSidebarOpen && (
-        <div className="sidebar-overlay" onClick={closeEditProjectSidebar}>
-          <div className="sidebar" onClick={(e) => e.stopPropagation()}>
-            <div className="sidebar-header">
-              <h3 className="sidebar-title">Редактировать проект</h3>
-              <button className="sidebar-close" onClick={closeEditProjectSidebar}>
+      {/* Модальное окно редактирования группы */}
+      {isEditModalOpen && (
+        <div className="modal-overlay" onClick={closeEditModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">Редактировать группу</h3>
+              <button className="modal-close" onClick={closeEditModal}>
                 ×
               </button>
             </div>
             
-            <div className="sidebar-body">
+            <div className="modal-body">
               <div className="form-group">
                 <label className="form-label">Название</label>
                 <input
                   type="text"
                   name="title"
-                  value={editProjectFormData.title}
-                  onChange={handleEditProjectInputChange}
+                  value={formData.title}
+                  onChange={handleInputChange}
                   className="form-input"
-                  placeholder="Введите название проекта"
+                  placeholder="Введите название группы"
                   required
                 />
               </div>
               
               <div className="form-group">
-                <label className="form-label">Код проекта</label>
-                <input
-                  type="text"
-                  name="code"
-                  value={editProjectFormData.code}
-                  onChange={handleEditProjectInputChange}
-                  className="form-input"
-                  placeholder="Например: MAIN_PROJECT"
-                  required
-                />
-              </div>
-              
-              <div className="form-group">
-                <label className="form-label">URL проекта</label>
+                <label className="form-label">URL</label>
                 <input
                   type="url"
                   name="url"
-                  value={editProjectFormData.url}
-                  onChange={handleEditProjectInputChange}
+                  value={formData.url}
+                  onChange={handleInputChange}
                   className="form-input"
-                  placeholder="https://example.com"
+                  placeholder="https://example.com/"
                   required
                 />
               </div>
               
               <div className="form-group">
-                <label className="form-label">
+                <label className="form-label">Код</label>
+                <input
+                  type="text"
+                  name="code"
+                  value={formData.code}
+                  onChange={handleInputChange}
+                  className="form-input"
+                  placeholder="Введите код группы"
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label className="checkbox-label">
                   <input
                     type="checkbox"
                     name="is_active"
-                    checked={editProjectFormData.is_active}
-                    onChange={handleEditProjectInputChange}
+                    checked={formData.is_active}
+                    onChange={handleInputChange}
                     className="form-checkbox"
                   />
-                  Активный проект
+                  Активна
                 </label>
               </div>
             </div>
             
-            <div className="form-actions">
-              <button className="btn-cancel" onClick={closeEditProjectSidebar}>
+            <div className="modal-footer">
+              <button className="btn-cancel" onClick={closeEditModal}>
                 Отмена
               </button>
-              <button className="btn-save" onClick={handleUpdateProject} disabled={isUpdating}>
-                {isUpdating ? 'Сохранение...' : 'Сохранить'}
+              <button className="btn-create" onClick={handleUpdateProject} disabled={isUpdating}>
+                {isUpdating ? 'Обновление...' : 'Обновить'}
               </button>
             </div>
           </div>

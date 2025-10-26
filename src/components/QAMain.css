@@ -181,11 +181,16 @@
   gap: 8px;
 }
 
+.integration-status > * {
+  display: inline-block;
+}
+
 .status-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: var(--color-text-muted);
+  margin-right: 4px;
 }
 
 .status-dot.enabled {

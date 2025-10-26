@@ -88,10 +88,6 @@ export const QAMain = () => {
         <div className="dashboard-header">
           <h1 className="dashboard-title">Дашборд</h1>
           <p className="dashboard-subtitle">Обзор системы и статистика</p>
-          <button className="create-button">
-            <span className="create-icon">+</span>
-            Create
-          </button>
         </div>
 
         {dashboardData && (

@@ -30,6 +30,7 @@ export const QASettings = () => {
   const [agentsData, setAgentsData] = useState(null);
   const [isAgentsLoading, setIsAgentsLoading] = useState(false);
   const [agentsError, setAgentsError] = useState('');
+  const [agentTypeFilter, setAgentTypeFilter] = useState('all'); // all, agent, bot
   
   // Состояния для интеграций
   const [integrationsData, setIntegrationsData] = useState(null);
@@ -90,6 +91,7 @@ export const QASettings = () => {
   const [expandedGroups, setExpandedGroups] = useState({});
   const [editingPenalty, setEditingPenalty] = useState(null);
   const [isUpdatingPenalty, setIsUpdatingPenalty] = useState(false);
+  const [tagsSearchQuery, setTagsSearchQuery] = useState('');
   
   // Состояния для сайдбара создания проекта
   const [isCreateProjectSidebarOpen, setIsCreateProjectSidebarOpen] = useState(false);
@@ -102,12 +104,20 @@ export const QASettings = () => {
     is_active: true
   });
   
+  // Состояния для сайдбара редактирования проекта
+  const [isEditProjectSidebarOpen, setIsEditProjectSidebarOpen] = useState(false);
+  const [isUpdatingProject, setIsUpdatingProject] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
+  const [editProjectFormData, setEditProjectFormData] = useState({
+    title: '',
+    code: '',
+    url: '',
+    is_active: true
+  });
+  
   // Состояния для модального окна создания группы
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [editingProject, setEditingProject] = useState(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -127,10 +137,16 @@ export const QASettings = () => {
     is_active: true
   });
   
-  // Состояния для редактирования агента
-  const [editingAgent, setEditingAgent] = useState(null);
-  const [isEditAgentModalOpen, setIsEditAgentModalOpen] = useState(false);
+  // Состояния для сайдбара редактирования агента
+  const [isEditAgentSidebarOpen, setIsEditAgentSidebarOpen] = useState(false);
   const [isUpdatingAgent, setIsUpdatingAgent] = useState(false);
+  const [editingAgent, setEditingAgent] = useState(null);
+  const [editAgentFormData, setEditAgentFormData] = useState({
+    name: '',
+    type: 'agent',
+    lcid: '',
+    available: true
+  });
   const [isDeletingAgent, setIsDeletingAgent] = useState(false);
 
   useEffect(() => {
@@ -180,11 +196,10 @@ export const QASettings = () => {
     setIsCreateIntegrationSidebarOpen(false);
     setIsEditIntegrationSidebarOpen(false);
     setIsCreateProjectSidebarOpen(false);
+    setIsEditProjectSidebarOpen(false);
     setIsCreateModalOpen(false);
-    setIsEditModalOpen(false);
     setIsCreateAgentSidebarOpen(false);
-    // setIsCreateAgentModalOpen(false); // Удалено - используем сайдбар
-    setIsEditAgentModalOpen(false);
+    setIsEditAgentSidebarOpen(false);
   }, [location.pathname]);
 
   // Автоматическая загрузка данных при переключении вкладок
@@ -649,6 +664,14 @@ export const QASettings = () => {
     }));
   };
 
+  const handleEditProjectInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setEditProjectFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
   const handleCreateProject = async (e) => {
     e.stopPropagation();
     
@@ -713,41 +736,41 @@ export const QASettings = () => {
     });
   };
 
-  const openEditModal = (project) => {
+  const openEditProjectSidebar = (project) => {
     setEditingProject(project);
-    setFormData({
+    setEditProjectFormData({
       title: project.title,
-      is_active: project.is_active,
-      url: project.url,
-      code: project.code
+      code: project.code,
+      url: project.url || '',
+      is_active: project.is_active
     });
-    setIsEditModalOpen(true);
+    setIsEditProjectSidebarOpen(true);
   };
 
-  const closeEditModal = (e) => {
+  const closeEditProjectSidebar = (e) => {
     if (e) {
       e.stopPropagation();
     }
-    setIsEditModalOpen(false);
-    setIsUpdating(false);
+    setIsEditProjectSidebarOpen(false);
+    setIsUpdatingProject(false);
     setEditingProject(null);
-    setFormData({
+    setEditProjectFormData({
       title: '',
-      is_active: true,
+      code: '',
       url: '',
-      code: ''
+      is_active: true
     });
   };
 
   const handleUpdateProject = async (e) => {
     e.stopPropagation();
     
-    if (!formData.title.trim() || !formData.url.trim() || !formData.code.trim()) {
+    if (!editProjectFormData.title.trim() || !editProjectFormData.code.trim()) {
       alert('Пожалуйста, заполните все обязательные поля');
       return;
     }
     
-    setIsUpdating(true);
+    setIsUpdatingProject(true);
     
     try {
       const response = await fetch(`http://185.138.164.88/api/v1/settings/project/${editingProject.id}`, {
@@ -756,10 +779,10 @@ export const QASettings = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title: formData.title.trim(),
-          is_active: formData.is_active,
-          // url: formData.url.trim(),
-          code: formData.code.trim()
+          title: editProjectFormData.title.trim(),
+          code: editProjectFormData.code.trim(),
+          url: editProjectFormData.url.trim(),
+          is_active: editProjectFormData.is_active
         }),
       });
 
@@ -771,17 +794,17 @@ export const QASettings = () => {
       const result = await response.json();
       console.log('Проект успешно обновлен:', result);
 
-      closeEditModal();
+      closeEditProjectSidebar();
       if (activeTab === 'projects') {
         fetchProjects();
       }
       
-      alert('Группа успешно обновлена!');
+      alert('Проект успешно обновлен!');
     } catch (err) {
-      console.error('Ошибка обновления группы:', err);
-      alert(`Ошибка обновления группы: ${err.message}`);
+      console.error('Ошибка обновления проекта:', err);
+      alert(`Ошибка обновления проекта: ${err.message}`);
     } finally {
-      setIsUpdating(false);
+      setIsUpdatingProject(false);
     }
   };
 
@@ -856,6 +879,14 @@ export const QASettings = () => {
     }));
   };
 
+  const handleEditAgentInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setEditAgentFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
   const handleCreateAgent = async (e) => {
     e.stopPropagation();
     
@@ -902,28 +933,28 @@ export const QASettings = () => {
     }
   };
 
-  const openEditAgentModal = (agent) => {
+  const openEditAgentSidebar = (agent) => {
     setEditingAgent(agent);
-    setAgentFormData({
+    setEditAgentFormData({
+      name: agent.name || '',
       type: agent.type || 'agent',
       lcid: agent.lcid || '',
-      name: agent.name || '',
       available: agent.available !== undefined ? agent.available : true
     });
-    setIsEditAgentModalOpen(true);
+    setIsEditAgentSidebarOpen(true);
   };
 
-  const closeEditAgentModal = (e) => {
+  const closeEditAgentSidebar = (e) => {
     if (e) {
       e.stopPropagation();
     }
-    setIsEditAgentModalOpen(false);
+    setIsEditAgentSidebarOpen(false);
     setIsUpdatingAgent(false);
     setEditingAgent(null);
-    setAgentFormData({
-      type: 'customer',
-      lcid: '',
+    setEditAgentFormData({
       name: '',
+      type: 'agent',
+      lcid: '',
       available: true
     });
   };
@@ -931,7 +962,7 @@ export const QASettings = () => {
   const handleUpdateAgent = async (e) => {
     e.stopPropagation();
     
-    if (!agentFormData.lcid.trim() || !agentFormData.name.trim()) {
+    if (!editAgentFormData.lcid.trim() || !editAgentFormData.name.trim()) {
       alert('Пожалуйста, заполните все обязательные поля');
       return;
     }
@@ -939,16 +970,16 @@ export const QASettings = () => {
     setIsUpdatingAgent(true);
     
     try {
-      const response = await fetch(`http://185.138.164.88/api/v1/settings/agent/?id=${editingAgent.id}`, {
+      const response = await fetch(`http://185.138.164.88/api/v1/settings/agent/${editingAgent.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          type: agentFormData.type,
-          lcid: agentFormData.lcid.trim(),
-          name: agentFormData.name.trim(),
-          available: agentFormData.available
+          type: editAgentFormData.type,
+          lcid: editAgentFormData.lcid.trim(),
+          name: editAgentFormData.name.trim(),
+          available: editAgentFormData.available
         }),
       });
 
@@ -960,7 +991,7 @@ export const QASettings = () => {
       const result = await response.json();
       console.log('Агент успешно обновлен:', result);
 
-      closeEditAgentModal();
+      closeEditAgentSidebar();
       if (activeTab === 'agents') {
         fetchAgents();
       }
@@ -1726,7 +1757,7 @@ export const QASettings = () => {
                           <div className="project-actions">
                             <button 
                               className="project-action-btn edit"
-                              onClick={() => openEditModal(project)}
+                              onClick={() => openEditProjectSidebar(project)}
                               title="Редактировать проект"
                             >
                               <SettingOutlined />
@@ -1791,10 +1822,46 @@ export const QASettings = () => {
                 <div className="agents-display">
                   <div className="section-header">
                     <h2 className="section-title">Агенты</h2>
+                    <div className="agents-filter">
+                      <button 
+                        className={`filter-btn ${agentTypeFilter === 'all' ? 'active' : ''}`}
+                        onClick={() => setAgentTypeFilter('all')}
+                      >
+                        All
+                      </button>
+                      <button 
+                        className={`filter-btn ${agentTypeFilter === 'agent' ? 'active' : ''}`}
+                        onClick={() => setAgentTypeFilter('agent')}
+                      >
+                        Agent
+                      </button>
+                      <button 
+                        className={`filter-btn ${agentTypeFilter === 'bot' ? 'active' : ''}`}
+                        onClick={() => setAgentTypeFilter('bot')}
+                      >
+                        Bot
+                      </button>
+                    </div>
                   </div>
                   
-                  <div className="agents-list">
-                    {agentsData.map((agent) => (
+                  <div className="agents-content">
+                  {(() => {
+                    const filteredAgents = agentsData.filter(agent => {
+                      if (agentTypeFilter === 'all') return true;
+                      return agent.type === agentTypeFilter;
+                    });
+
+                    if (filteredAgents.length === 0) {
+                      return (
+                        <div className="no-data">
+                          <p>Агентов такого типа не существует</p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="agents-list">
+                        {filteredAgents.map((agent) => (
                         <div key={agent.id} className="agent-item">
                           <div className="agent-main">
                             <div className="agent-name">{agent.name || 'Агент'}</div>
@@ -1807,22 +1874,17 @@ export const QASettings = () => {
                           <div className="agent-actions">
                           <button 
                             className="agent-edit-btn" 
-                            onClick={() => openEditAgentModal(agent)}
+                            onClick={() => openEditAgentSidebar(agent)}
                             title="Редактировать агента"
                           >
                             ✎
                           </button>
-                          <button 
-                            className="agent-delete-btn" 
-                            onClick={() => handleDeleteAgent(agent.id)}
-                            disabled={isDeletingAgent}
-                            title="Удалить агента"
-                          >
-                            ✕
-                          </button>
                         </div>
                       </div>
-                    ))}
+                        ))}
+                      </div>
+                      );
+                    })()}
                   </div>
                 </div>
               ) : (
@@ -1837,6 +1899,17 @@ export const QASettings = () => {
             <div className="tab-content">
               <div className="section-header">
                 <h2 className="section-title">Теги</h2>
+                {!isTagsLoading && !tagsError && tagsData && tagsData.length > 0 && (
+                  <div className="tags-search">
+                    <input
+                      type="text"
+                      placeholder="Поиск по вопросам и тегам..."
+                      value={tagsSearchQuery}
+                      onChange={(e) => setTagsSearchQuery(e.target.value)}
+                      className="tags-search-input"
+                    />
+                  </div>
+                )}
               </div>
               
               {isTagsLoading && (
@@ -1852,9 +1925,33 @@ export const QASettings = () => {
                 </div>
               )}
               
-              {!isTagsLoading && !tagsError && tagsData && tagsData.length > 0 && (
-                <div className="tags-display">
-                  {tagsData.map((questionGroup, index) => {
+              {!isTagsLoading && !tagsError && tagsData && tagsData.length > 0 && (() => {
+                  const filteredData = tagsData.filter(questionGroup => {
+                    if (!tagsSearchQuery.trim()) return true;
+                    
+                    // Проверяем, соответствует ли вопрос поисковому запросу
+                    const questionMatches = questionGroup.question.toLowerCase().includes(tagsSearchQuery.toLowerCase());
+                    
+                    // Проверяем, соответствуют ли какие-либо теги поисковому запросу
+                    const tags = Object.values(questionGroup.tags);
+                    const anyTagMatches = tags.some(tag => 
+                      tag.name.toLowerCase().includes(tagsSearchQuery.toLowerCase())
+                    );
+                    
+                    return questionMatches || anyTagMatches;
+                  });
+
+                  if (filteredData.length === 0 && tagsSearchQuery.trim()) {
+                    return (
+                      <div className="no-data">
+                        <p>По запросу "{tagsSearchQuery}" ничего не найдено</p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="tags-display">
+                      {filteredData.map((questionGroup, index) => {
                     const isExpanded = !!expandedGroups[index];
                     const tagsCount = Object.keys(questionGroup.tags).length;
                     
@@ -1932,9 +2029,10 @@ export const QASettings = () => {
                         )}
                       </div>
                     );
-                  })}
-                </div>
-              )}
+                    })}
+                    </div>
+                  );
+              })()}
               
               {!isTagsLoading && !tagsError && tagsData && tagsData.length === 0 && (
                 <div className="no-data">
@@ -2120,78 +2218,78 @@ export const QASettings = () => {
         </div>
       )}
       
-      {/* Модальное окно редактирования группы */}
-      {isEditModalOpen && (
-        <div className="modal-overlay" onClick={closeEditModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="modal-title">Редактировать группу</h3>
-              <button className="modal-close" onClick={closeEditModal}>
+      {/* Сайдбар для редактирования проекта */}
+      {isEditProjectSidebarOpen && (
+        <div className="sidebar-overlay" onClick={closeEditProjectSidebar}>
+          <div className="sidebar-content" onClick={(e) => e.stopPropagation()}>
+            <div className="sidebar-header">
+              <h3 className="sidebar-title">Редактировать проект</h3>
+              <button className="sidebar-close" onClick={closeEditProjectSidebar}>
                 ×
               </button>
             </div>
             
-            <div className="modal-body">
+            <div className="sidebar-body">
               <div className="form-group">
                 <label className="form-label">Название</label>
                 <input
                   type="text"
                   name="title"
-                  value={formData.title}
-                  onChange={handleInputChange}
+                  value={editProjectFormData.title}
+                  onChange={handleEditProjectInputChange}
                   className="form-input"
-                  placeholder="Введите название группы"
+                  placeholder="Введите название проекта"
                   required
                 />
               </div>
               
               <div className="form-group">
-                <label className="form-label">URL</label>
-                <input
-                  type="url"
-                  name="url"
-                  value={formData.url}
-                  onChange={handleInputChange}
-                  className="form-input"
-                  placeholder="https://example.com/"
-                  required
-                />
-              </div>
-              
-              <div className="form-group">
-                <label className="form-label">Код</label>
+                <label className="form-label">Код проекта</label>
                 <input
                   type="text"
                   name="code"
-                  value={formData.code}
-                  onChange={handleInputChange}
+                  value={editProjectFormData.code}
+                  onChange={handleEditProjectInputChange}
                   className="form-input"
-                  placeholder="Введите код группы"
+                  placeholder="Введите код проекта"
                   required
                 />
               </div>
               
               <div className="form-group">
-                <label className="checkbox-label">
+                <label className="form-label">URL проекта</label>
+                <input
+                  type="url"
+                  name="url"
+                  value={editProjectFormData.url}
+                  onChange={handleEditProjectInputChange}
+                  className="form-input"
+                  placeholder="https://example.com"
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label className="form-label">
                   <input
                     type="checkbox"
                     name="is_active"
-                    checked={formData.is_active}
-                    onChange={handleInputChange}
+                    checked={editProjectFormData.is_active}
+                    onChange={handleEditProjectInputChange}
                     className="form-checkbox"
                   />
-                  Активна
+                  Активный проект
                 </label>
               </div>
-            </div>
-            
-            <div className="modal-footer">
-              <button className="btn-cancel" onClick={closeEditModal}>
-                Отмена
-              </button>
-              <button className="btn-create" onClick={handleUpdateProject} disabled={isUpdating}>
-                {isUpdating ? 'Обновление...' : 'Обновить'}
-              </button>
+              
+              <div className="form-actions">
+                <button className="btn-cancel" onClick={closeEditProjectSidebar}>
+                  Отмена
+                </button>
+                <button className="btn-create" onClick={handleUpdateProject} disabled={isUpdatingProject}>
+                  {isUpdatingProject ? 'Обновление...' : 'Обновить'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -2291,52 +2389,25 @@ export const QASettings = () => {
       
       {/* Модальное окно создания агента - УДАЛЕНО, заменено на сайдбар */}
       
-      {/* Модальное окно редактирования агента */}
-      {isEditAgentModalOpen && (
-        <div className="modal-overlay" onClick={closeEditAgentModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="modal-title">Редактировать агента</h3>
-              <button className="modal-close" onClick={closeEditAgentModal}>
+      {/* Сайдбар для редактирования агента */}
+      {isEditAgentSidebarOpen && (
+        <div className="sidebar-overlay" onClick={closeEditAgentSidebar}>
+          <div className="sidebar-content" onClick={(e) => e.stopPropagation()}>
+            <div className="sidebar-header">
+              <h3 className="sidebar-title">Редактировать агента</h3>
+              <button className="sidebar-close" onClick={closeEditAgentSidebar}>
                 ×
               </button>
             </div>
             
-            <div className="modal-body">
-              <div className="form-group">
-                <label className="form-label">Тип</label>
-                <select
-                  name="type"
-                  value={agentFormData.type}
-                  onChange={handleAgentInputChange}
-                  className="form-input"
-                  required
-                >
-                  <option value="agent">Agent</option>
-                  <option value="bot">Bot</option>
-                </select>
-              </div>
-              
-              <div className="form-group">
-                <label className="form-label">LCID (ID или почта)</label>
-                <input
-                  type="text"
-                  name="lcid"
-                  value={agentFormData.lcid}
-                  onChange={handleAgentInputChange}
-                  className="form-input"
-                  placeholder="Введите ID или почту из интеграции"
-                  required
-                />
-              </div>
-              
+            <div className="sidebar-body">
               <div className="form-group">
                 <label className="form-label">Имя агента</label>
                 <input
                   type="text"
                   name="name"
-                  value={agentFormData.name}
-                  onChange={handleAgentInputChange}
+                  value={editAgentFormData.name}
+                  onChange={handleEditAgentInputChange}
                   className="form-input"
                   placeholder="Введите имя агента"
                   required
@@ -2344,26 +2415,58 @@ export const QASettings = () => {
               </div>
               
               <div className="form-group">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    name="available"
-                    checked={agentFormData.available}
-                    onChange={handleAgentInputChange}
-                    className="form-checkbox"
-                  />
-                  Доступен
-                </label>
+                <label className="form-label">Тип</label>
+                <div className="select-wrapper">
+                  <select
+                    name="type"
+                    value={editAgentFormData.type}
+                    onChange={handleEditAgentInputChange}
+                    className="form-input form-select"
+                    required
+                  >
+                    <option value="agent">Agent</option>
+                    <option value="bot">Bot</option>
+                  </select>
+                </div>
               </div>
-            </div>
-            
-            <div className="modal-footer">
-              <button className="btn-cancel" onClick={closeEditAgentModal}>
-                Отмена
-              </button>
-              <button className="btn-create" onClick={handleUpdateAgent} disabled={isUpdatingAgent}>
-                {isUpdatingAgent ? 'Обновление...' : 'Обновить'}
-              </button>
+              
+              <div className="form-group">
+                <label className="form-label">LCID (ID или почта)</label>
+                <input
+                  type="text"
+                  name="lcid"
+                  value={editAgentFormData.lcid}
+                  onChange={handleEditAgentInputChange}
+                  className="form-input"
+                  placeholder="Введите ID или почту из интеграции"
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label className="form-label">Доступен</label>
+                <div className="checkbox-wrapper">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      name="available"
+                      checked={editAgentFormData.available}
+                      onChange={handleEditAgentInputChange}
+                      className="form-checkbox"
+                    />
+                    Агент доступен
+                  </label>
+                </div>
+              </div>
+              
+              <div className="form-actions">
+                <button className="btn-cancel" onClick={closeEditAgentSidebar}>
+                  Отмена
+                </button>
+                <button className="btn-create" onClick={handleUpdateAgent} disabled={isUpdatingAgent}>
+                  {isUpdatingAgent ? 'Обновление...' : 'Обновить'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

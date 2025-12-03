@@ -113,3 +113,15 @@ h5 { font-size: var(--fs-h5); font-weight: var(--fw-medium); }
 .caption {
   font-size: var(--fs-caption);
 }
+
+/* Убираем фокус у всех инпутов */
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: inherit !important;
+}

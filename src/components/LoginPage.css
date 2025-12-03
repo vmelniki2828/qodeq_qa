@@ -220,10 +220,6 @@
   border-color: var(--color-error);
 }
 
-.form-input:valid {
-  border-color: var(--color-success);
-}
-
 .login-button:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(16, 163, 127, 0.2);

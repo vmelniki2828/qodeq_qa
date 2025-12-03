@@ -577,37 +577,6 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
   outline: none !important;
 }
 
-/* Убираем браузерные стили валидации */
-input:invalid {
-  border-color: var(--color-border) !important;
-  box-shadow: none !important;
-}
-
-input:valid {
-  border-color: var(--color-border) !important;
-  box-shadow: none !important;
-}
-
-input:focus {
-  border-color: var(--color-text) !important;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1) !important;
-}
-
-select:invalid {
-  border-color: var(--color-border) !important;
-  box-shadow: none !important;
-}
-
-select:valid {
-  border-color: var(--color-border) !important;
-  box-shadow: none !important;
-}
-
-select:focus {
-  border-color: var(--color-text) !important;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1) !important;
-}
-
 /* Сайдбар создания интеграции */
 .sidebar-overlay {
   position: absolute;

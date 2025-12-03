@@ -59,7 +59,7 @@ export const LoginPage = () => {
     // Успешная авторизация
     Notify.success('Вход выполнен успешно!');
     setTimeout(() => {
-      navigate('/qa_main');
+      navigate('/tools-workflow');
     }, 500);
   };
 
@@ -70,12 +70,12 @@ export const LoginPage = () => {
       </ThemeToggleWrapper>
       <div
         style={{
-          width: '700px',
+          width: '100%',
+          maxWidth: '700px',
           padding: '40px',
           backgroundColor: theme.colors.background,
           borderRadius: '8px',
           boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-          boxSizing: 'border-box',
         }}
       >
         <h2
@@ -84,13 +84,9 @@ export const LoginPage = () => {
             textAlign: 'center',
             color: theme.colors.primary,
             fontSize: '28px',
-            fontWeight: 'bold',
-            boxSizing: 'border-box',
-            transition: 'background-color 0.3s ease, color 0.3s ease',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
           }}
         >
-          QodeqQA
+          Qodeq Admin Panel
         </h2>
 
         <form onSubmit={handleSubmit}>
@@ -113,7 +109,7 @@ export const LoginPage = () => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               style={{
-                width: '620px',
+                width: '100%',
                 padding: '12px',
                 border: `1px solid ${theme.colors.border}`,
                 borderRadius: '4px',
@@ -122,7 +118,6 @@ export const LoginPage = () => {
                 transition: 'border-color 0.3s',
                 backgroundColor: theme.colors.background,
                 color: theme.colors.primary,
-                boxSizing: 'border-box',
               }}
               placeholder="Введите username"
             />
@@ -147,7 +142,7 @@ export const LoginPage = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               style={{
-                width: '620px',
+                width: '100%',
                 padding: '12px',
                 border: `1px solid ${theme.colors.border}`,
                 borderRadius: '4px',
@@ -156,7 +151,6 @@ export const LoginPage = () => {
                 transition: 'border-color 0.3s',
                 backgroundColor: theme.colors.background,
                 color: theme.colors.primary,
-                boxSizing: 'border-box',
               }}
               placeholder="Введите пароль"
             />
@@ -165,7 +159,7 @@ export const LoginPage = () => {
           <button
             type="submit"
             style={{
-              width: '620px',
+              width: '100%',
               padding: '12px',
               backgroundColor: theme.colors.primary,
               color: theme.colors.background,
@@ -175,7 +169,6 @@ export const LoginPage = () => {
               fontWeight: '600',
               cursor: 'pointer',
               transition: 'background-color 0.3s, opacity 0.3s',
-              boxSizing: 'border-box',
             }}
             onMouseEnter={(e) => (e.target.style.opacity = '0.8')}
             onMouseLeave={(e) => (e.target.style.opacity = '1')}
@@ -187,3 +180,4 @@ export const LoginPage = () => {
     </LoginContainer>
   );
 };
+

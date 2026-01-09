@@ -2,7 +2,7 @@ import styled from 'styled-components';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
-import { ToggleTheme } from 'components/ToggleTheme';
+import { ToggleTheme } from './ToggleTheme';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
 const LoginContainer = styled.div`
@@ -70,12 +70,12 @@ export const LoginPage = () => {
       </ThemeToggleWrapper>
       <div
         style={{
-          width: '700px',
+          width: '100%',
+          maxWidth: '700px',
           padding: '40px',
           backgroundColor: theme.colors.background,
           borderRadius: '8px',
           boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-          boxSizing: 'border-box',
         }}
       >
         <h2
@@ -85,9 +85,6 @@ export const LoginPage = () => {
             color: theme.colors.primary,
             fontSize: '28px',
             fontWeight: 'bold',
-            boxSizing: 'border-box',
-            transition: 'background-color 0.3s ease, color 0.3s ease',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
           }}
         >
           QodeqQA
@@ -113,7 +110,7 @@ export const LoginPage = () => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               style={{
-                width: '620px',
+                width: '100%',
                 padding: '12px',
                 border: `1px solid ${theme.colors.border}`,
                 borderRadius: '4px',
@@ -147,7 +144,7 @@ export const LoginPage = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               style={{
-                width: '620px',
+                width: '100%',
                 padding: '12px',
                 border: `1px solid ${theme.colors.border}`,
                 borderRadius: '4px',
@@ -165,7 +162,7 @@ export const LoginPage = () => {
           <button
             type="submit"
             style={{
-              width: '620px',
+              width: '100%',
               padding: '12px',
               backgroundColor: theme.colors.primary,
               color: theme.colors.background,

@@ -1,128 +1,101 @@
-import React, { useState } from 'react';
+import styled from 'styled-components';
+import { useTheme } from '../contexts/ThemeContext';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  UserOutlined, 
-  BarChartOutlined, 
-  MessageOutlined, 
-  SettingOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-  HomeOutlined,
-  ApiOutlined,
-  ProjectOutlined,
-  TeamOutlined,
-  TagsOutlined
-} from '@ant-design/icons';
-import './Sidebar.css';
 
-export const Sidebar = ({ onCollapseChange }) => {
+const SidebarStyled = styled.aside`
+  width: 186px;
+  height: 100%;
+  background-color: ${({ theme }) => theme.colors.background};
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  padding: 16px 12px;
+`;
+
+const Nav = styled.nav`
+  flex: 1;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: ${({ theme }) => theme.colors.background};
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.colors.border};
+    border-radius: 4px;
+
+    &:hover {
+      background: ${({ theme }) => theme.colors.secondary};
+    }
+  }
+`;
+
+const MenuItem = styled.div`
+  padding: 10px 14px;
+  margin: 2px 0;
+  border-radius: 6px;
+  cursor: pointer;
+  background-color: ${({ $active, theme }) =>
+    $active
+      ? theme.colors.primary === '#0D0D0D'
+        ? '#f0f0f0'
+        : 'rgba(255,255,255,0.08)'
+      : 'transparent'};
+  color: ${({ $active, theme }) =>
+    $active ? theme.colors.primary : theme.colors.secondary};
+  display: flex;
+  align-items: center;
+  transition: all 0.15s ease;
+  font-size: 14px;
+  font-weight: ${({ $active }) => ($active ? '500' : '400')};
+
+  &:hover {
+    background-color: ${({ $active, theme }) =>
+      !$active
+        ? theme.colors.primary === '#0D0D0D'
+          ? '#f8f8f8'
+          : 'rgba(255,255,255,0.04)'
+        : null};
+  }
+`;
+
+const menuItems = [
+  { label: 'Dashboard', path: '/dashboard' },
+  { label: 'Chats', path: '/chats' },
+];
+
+export const Sidebar = () => {
+  const { theme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [expandedSettings, setExpandedSettings] = useState(false);
 
-  const menuItems = [
-    { id: 'qa_main', icon: UserOutlined, label: 'Профиль', path: '/qa_main' },
-    { id: 'qa_analytics', icon: BarChartOutlined, label: 'Аналитика', path: '/qa_analytics' },
-    { id: 'qa_chats', icon: MessageOutlined, label: 'Чаты', path: '/qa_chats' },
-    { 
-      id: 'qa_settings', 
-      icon: SettingOutlined, 
-      label: 'Настройки', 
-      path: '/qa_settings',
-      hasSubmenu: true,
-      submenu: [
-        { id: 'settings_main', icon: HomeOutlined, label: 'Главная', path: '/qa_settings' },
-        { id: 'settings_integrations', icon: ApiOutlined, label: 'Интеграции', path: '/qa_settings/integrations' },
-        { id: 'settings_projects', icon: ProjectOutlined, label: 'Проекты', path: '/qa_settings/projects' },
-        { id: 'settings_agents', icon: TeamOutlined, label: 'Агенты', path: '/qa_settings/agents' },
-        { id: 'settings_tags', icon: TagsOutlined, label: 'Теги', path: '/qa_settings/tags' }
-      ]
-    }
-  ];
-
-  const handleNavigation = (path) => {
-    navigate(path);
-  };
-
-  const toggleCollapse = () => {
-    const newCollapsedState = !isCollapsed;
-    setIsCollapsed(newCollapsedState);
-    if (onCollapseChange) {
-      onCollapseChange(newCollapsedState);
-    }
-  };
-
-  const toggleSettingsSubmenu = () => {
-    setExpandedSettings(!expandedSettings);
+  const isActive = (path) => {
+    return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
   return (
-    <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
-      <div className="sidebar-header">
-        <div className="logo">
-          <span className="logo-icon">◉</span>
-          {!isCollapsed && <span className="logo-text">QODEQ QA</span>}
-        </div>
-      </div>
-
-      <nav className="sidebar-nav">
-        <ul className="nav-list">
-          {menuItems.map(item => {
-            const IconComponent = item.icon;
-            const isActive = location.pathname === item.path || 
-              (item.hasSubmenu && item.submenu.some(sub => location.pathname === sub.path));
-            
-            return (
-              <li key={item.id} className="nav-item">
-                <button 
-                  className={`nav-link ${isActive ? 'active' : ''}`}
-                  onClick={() => {
-                    if (item.hasSubmenu) {
-                      toggleSettingsSubmenu();
-                    } else {
-                      handleNavigation(item.path);
-                    }
-                  }}
-                >
-                  <span className="nav-icon">
-                    <IconComponent />
-                  </span>
-                  {!isCollapsed && <span className="nav-text">{item.label}</span>}
-                </button>
-                
-                {/* Подменю для настроек */}
-                {item.hasSubmenu && !isCollapsed && expandedSettings && (
-                  <ul className="submenu">
-                    {item.submenu.map(subItem => {
-                      const SubIconComponent = subItem.icon;
-                      return (
-                        <li key={subItem.id} className="submenu-item">
-                          <button 
-                            className={`submenu-link ${location.pathname === subItem.path ? 'active' : ''}`}
-                            onClick={() => handleNavigation(subItem.path)}
-                          >
-                            <span className="submenu-icon">
-                              <SubIconComponent />
-                            </span>
-                            <span className="submenu-text">{subItem.label}</span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
-
-      <div className="sidebar-footer">
-        <button className="collapse-btn" onClick={toggleCollapse}>
-          {isCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-        </button>
-      </div>
-    </div>
+    <SidebarStyled theme={theme}>
+      <Nav>
+        {menuItems.map((item) => {
+          const active = isActive(item.path);
+          return (
+            <MenuItem
+              key={item.path}
+              $active={active}
+              theme={theme}
+              onClick={() => navigate(item.path)}
+            >
+              <span>{item.label}</span>
+            </MenuItem>
+          );
+        })}
+      </Nav>
+    </SidebarStyled>
   );
 };
+

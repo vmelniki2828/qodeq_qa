@@ -37,6 +37,24 @@ const ContentArea = styled.div`
   padding: 0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   overflow: auto;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: ${({ theme }) => theme.colors.background};
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.colors.border};
+    border-radius: 4px;
+
+    &:hover {
+      background: ${({ theme }) => theme.colors.secondary};
+    }
+  }
 `;
 
 export const Layout = ({ children }) => {
@@ -57,3 +75,4 @@ export const Layout = ({ children }) => {
     </LayoutContainer>
   );
 };
+

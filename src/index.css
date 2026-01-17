@@ -1,115 +1,15 @@
 @import-normalize; /* bring in normalize.css styles */
 
-:root {
-  --color-bg: #0A0A0A;
-  --color-bg-panel: #1A1A1A;
-  --color-text: #FFFFFF;
-  --color-text-muted: #B3B3B3;
-  --color-accent-hover: #2CCCA0;
-  --color-border: #333333;
-  --color-error: #E53E3E;
-  --color-success: #2F855A;
-
-  --font-family-base: 'OpenAI Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-
-  /* размеры */
-  --fs-h1: 2.5rem;
-  --fs-h2: 2.0rem;
-  --fs-h3: 1.75rem;
-  --fs-h4: 1.5rem;
-  --fs-h5: 1.25rem;
-  --fs-body: 1rem;
-  --fs-small: 0.875rem;
-  --fs-caption: 0.75rem;
-
-  /* веса */
-  --fw-light: 300;
-  --fw-regular: 400;
-  --fw-medium: 500;
-  --fw-semibold: 600;
-  --fw-bold: 700;
-}
-
 body {
   margin: 0;
-  background-color: var(--color-bg-panel);
-  color: var(--color-text);
-  font-family: var(--font-family-base);
-  font-size: var(--fs-body);
-  font-weight: var(--fw-regular);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
 }
 
-/* Кастомный скроллбар */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--color-bg-panel);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 4px;
-  transition: background 0.2s ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-muted);
-}
-
-::-webkit-scrollbar-corner {
-  background: var(--color-bg-panel);
-}
-
-/* Для Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-border) var(--color-bg-panel);
-}
-
-/* Заголовки */
-h1 { font-size: var(--fs-h1); font-weight: var(--fw-semibold); }
-h2 { font-size: var(--fs-h2); font-weight: var(--fw-semibold); }
-h3 { font-size: var(--fs-h3); font-weight: var(--fw-medium); }
-h4 { font-size: var(--fs-h4); font-weight: var(--fw-medium); }
-h5 { font-size: var(--fs-h5); font-weight: var(--fw-medium); }
-
-/* Кнопки / акценты */
-.btn-primary {
-  background-color: var(--color-text);
-  color: var(--color-bg);
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: var(--fw-medium);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-primary:hover {
-  background-color: var(--color-text-muted);
-}
-
-/* Панели / карточки */
-.card {
-  background-color: var(--color-bg-panel);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 24px;
-}
-
-/* Мелкий текст */
-.small, .caption {
-  font-size: var(--fs-small);
-  color: var(--color-text-muted);
-}
-
-.caption {
-  font-size: var(--fs-caption);
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
 }

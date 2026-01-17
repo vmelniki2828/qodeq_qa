@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { Layout } from '../components/Layout';
 import { useTheme } from '../contexts/ThemeContext';
 import { Loader } from '../components/Loader';
-import { HiArrowLeft, HiCheck, HiXMark, HiHashtag, HiChatBubbleLeftRight, HiUser, HiClock, HiTag, HiCube } from 'react-icons/hi2';
+import { HiArrowLeft, HiCheck, HiXMark, HiHashtag, HiChatBubbleLeftRight, HiUser, HiClock, HiTag, HiCube, HiChevronDown, HiChevronUp } from 'react-icons/hi2';
 
 const getCookie = (name) => {
   const value = `; ${document.cookie}`;
@@ -423,7 +423,11 @@ const ResultItem = styled.div`
   background: ${({ theme }) => theme.colors.surface};
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 6px;
-  border-left: 3px solid ${({ $decision }) => $decision ? '#16a34a' : '#dc2626'};
+  border-left: 3px solid ${({ $decision, $localDecision }) => {
+    const decision = $localDecision !== undefined ? $localDecision : $decision;
+    return decision ? '#16a34a' : '#dc2626';
+  }};
+  position: relative;
   &:last-child {
     margin-bottom: 0;
   }
@@ -433,15 +437,67 @@ const ResultQuestion = styled.div`
   font-size: 13px;
   font-weight: 600;
   color: ${({ theme }) => theme.colors.primary};
-  margin-bottom: 8px;
+  margin-bottom: ${({ $isExpanded }) => $isExpanded ? '8px' : '0'};
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    opacity: 0.8;
+  }
+`;
+
+const CollapseIcon = styled.div`
+  display: flex;
+  align-items: center;
+  color: ${({ theme }) => theme.colors.secondary};
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+`;
+
+const ResultContent = styled.div`
+  display: ${({ $isExpanded }) => $isExpanded ? 'block' : 'none'};
+  margin-top: ${({ $isExpanded }) => $isExpanded ? '8px' : '0'};
 `;
 
 const ResultDecision = styled.div`
+  position: absolute;
+  top: 12px;
+  right: 12px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 6px;
+  gap: 8px;
   font-size: 12px;
+`;
+
+const DecisionToggle = styled.label`
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+`;
+
+const DecisionIcon = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: ${({ theme }) => theme.colors.primary === '#0D0D0D' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)'};
+  }
+`;
+
+const SavingIndicator = styled.span`
+  font-size: 11px;
+  color: ${({ theme }) => theme.colors.secondary};
+  font-style: italic;
 `;
 
 const ResultExplanation = styled.div`
@@ -489,6 +545,8 @@ export const ChatReviewedDetailPage = () => {
   const [splitterPosition, setSplitterPosition] = useState(50);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
+  const [expandedResults, setExpandedResults] = useState(new Set());
+  const [localDecisions, setLocalDecisions] = useState({});
 
   useEffect(() => {
     if (!id) {
@@ -549,6 +607,15 @@ export const ChatReviewedDetailPage = () => {
   const handleDividerMouseDown = (e) => {
     e.preventDefault();
     setIsDragging(true);
+  };
+
+  const handleDecisionChange = (resultId, newDecision) => {
+    if (!data || !resultId) return;
+    
+    setLocalDecisions(prev => ({
+      ...prev,
+      [resultId]: newDecision
+    }));
   };
 
   const d = data || {};
@@ -775,6 +842,7 @@ export const ChatReviewedDetailPage = () => {
                         const opResults = Array.isArray(operatorData?.results) ? operatorData.results : [];
                         const opScore = operatorData?.score;
                         const opScoreLevel = opScore != null ? (opScore >= 80 ? 'good' : opScore >= 50 ? 'warn' : 'bad') : null;
+                        
                         return (
                           <OperatorBlock key={operatorName} theme={theme}>
                             <OperatorHeader theme={theme}>
@@ -782,36 +850,85 @@ export const ChatReviewedDetailPage = () => {
                               {opScore != null && <ScoreBadge $level={opScoreLevel}>{opScore}</ScoreBadge>}
                             </OperatorHeader>
                             {opResults.length > 0 ? (
-                              opResults.map((result) => (
-                                <ResultItem key={result.id || Math.random()} theme={theme} $decision={result.decision}>
-                                  <ResultQuestion theme={theme}>{result.question || '—'}</ResultQuestion>
-                                  <ResultDecision theme={theme}>
-                                    {result.decision ? <HiCheck size={16} style={{ color: '#16a34a' }} /> : <HiXMark size={16} style={{ color: '#dc2626' }} />}
-                                    <span>{result.decision ? 'Да' : 'Нет'}</span>
-                                    {result.checked !== undefined && (
-                                      <>
-                                        <span style={{ marginLeft: 8, color: theme.colors.secondary }}>•</span>
-                                        <span style={{ color: theme.colors.secondary }}>{result.checked ? 'Проверено' : 'Не проверено'}</span>
-                                      </>
+                              opResults.map((result) => {
+                                const resultId = result.id || Math.random();
+                                const isExpanded = expandedResults.has(resultId);
+                                
+                                const toggleResult = () => {
+                                  setExpandedResults(prev => {
+                                    const newSet = new Set(prev);
+                                    if (newSet.has(resultId)) {
+                                      newSet.delete(resultId);
+                                    } else {
+                                      newSet.add(resultId);
+                                    }
+                                    return newSet;
+                                  });
+                                };
+                                
+                                const currentDecision = localDecisions[resultId] !== undefined ? localDecisions[resultId] : result.decision;
+                                
+                                return (
+                                  <ResultItem 
+                                    key={resultId} 
+                                    theme={theme} 
+                                    $decision={result.decision}
+                                    $localDecision={localDecisions[resultId]}
+                                  >
+                                    {isExpanded && (
+                                      <ResultDecision theme={theme}>
+                                        <DecisionToggle 
+                                          theme={theme}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDecisionChange(resultId, !currentDecision);
+                                          }}
+                                        >
+                                          <DecisionIcon theme={theme}>
+                                            {currentDecision ? (
+                                              <HiCheck size={20} style={{ color: '#16a34a' }} />
+                                            ) : (
+                                              <HiXMark size={20} style={{ color: '#dc2626' }} />
+                                            )}
+                                          </DecisionIcon>
+                                        </DecisionToggle>
+                                      </ResultDecision>
                                     )}
-                                  </ResultDecision>
-                                  {result.explanation && (
-                                    <ResultExplanation theme={theme}>{result.explanation}</ResultExplanation>
-                                  )}
-                                  {result.manager_comment && (
-                                    <ResultComment theme={theme}>Комментарий: {result.manager_comment}</ResultComment>
-                                  )}
-                                  {result.tags && Array.isArray(result.tags) && result.tags.length > 0 && (
-                                    <div style={{ marginTop: '6px', display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                                      {result.tags.map((tag, i) => (
-                                        <span key={i} style={{ fontSize: '10px', padding: '2px 6px', background: theme.colors.background, border: `1px solid ${theme.colors.border}`, borderRadius: '4px', color: theme.colors.secondary }}>
-                                          {String(tag)}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  )}
-                                </ResultItem>
-                              ))
+                                    <ResultQuestion 
+                                      theme={theme} 
+                                      $isExpanded={isExpanded}
+                                      onClick={toggleResult}
+                                    >
+                                      <CollapseIcon theme={theme}>
+                                        {isExpanded ? <HiChevronUp size={16} /> : <HiChevronDown size={16} />}
+                                      </CollapseIcon>
+                                      <span>{result.question || '—'}</span>
+                                    </ResultQuestion>
+                                    <ResultContent $isExpanded={isExpanded}>
+                                      {result.checked !== undefined && (
+                                        <div style={{ marginTop: '6px', fontSize: '12px', color: theme.colors.secondary }}>
+                                          {result.checked ? 'Проверено' : 'Не проверено'}
+                                        </div>
+                                      )}
+                                      {result.explanation && (
+                                        <ResultExplanation theme={theme}>{result.explanation}</ResultExplanation>
+                                      )}
+                                      {result.manager_comment && (
+                                        <ResultComment theme={theme}>Комментарий: {result.manager_comment}</ResultComment>
+                                      )}
+                                      {result.tags && Array.isArray(result.tags) && result.tags.length > 0 && (
+                                        <div style={{ marginTop: '6px', display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                          {result.tags.map((tag, i) => (
+                                            <span key={i} style={{ fontSize: '10px', padding: '2px 6px', background: theme.colors.background, border: `1px solid ${theme.colors.border}`, borderRadius: '4px', color: theme.colors.secondary }}>
+                                              {String(tag)}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </ResultContent>
+                                  </ResultItem>
+                                );
+                              })
                             ) : (
                               <EmptyState theme={theme} style={{ padding: 20 }}>Нет результатов</EmptyState>
                             )}

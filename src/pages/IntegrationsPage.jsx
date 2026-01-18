@@ -4,7 +4,7 @@ import styled, { ThemeProvider } from 'styled-components';
 import { useTheme } from '../contexts/ThemeContext';
 import { Layout } from '../components/Layout';
 import { Loader } from '../components/Loader';
-import { HiCheck, HiXMark, HiEye } from 'react-icons/hi2';
+import { HiCheck, HiXMark, HiEye, HiTrash, HiPencil } from 'react-icons/hi2';
 
 const getCookie = (name) => {
   const value = `; ${document.cookie}`;
@@ -54,6 +54,235 @@ const Button = styled.button`
   &:hover {
     background-color: ${({ theme }) =>
       theme.colors.primary === '#0D0D0D' ? '#f0f0f0' : 'rgba(255,255,255,0.08)'};
+  }
+
+  ${({ $primary, theme }) =>
+    $primary &&
+    `
+    background-color: ${theme.colors.accent};
+    color: #FFFFFF;
+    border-color: ${theme.colors.accent};
+
+    &:hover {
+      opacity: 0.9;
+    }
+  `}
+`;
+
+const PageContainer = styled.div`
+  display: flex;
+  flex: 1;
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  height: 100%;
+`;
+
+const LeftPanel = styled.div`
+  flex: ${({ $flex }) => $flex || 75} 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+`;
+
+const Divider = styled.div`
+  width: ${({ $isHidden }) => ($isHidden ? '0' : '4px')};
+  background-color: ${({ theme }) => theme.colors.border};
+  flex-shrink: 0;
+  position: relative;
+  opacity: ${({ $isHidden }) => ($isHidden ? 0 : 1)};
+  pointer-events: ${({ $isHidden }) => ($isHidden ? 'none' : 'auto')};
+  overflow: hidden;
+  transition: opacity 0.3s ease, width 0.3s ease;
+  cursor: col-resize;
+
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.accent};
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: -2px;
+    right: -2px;
+    top: 0;
+    bottom: 0;
+  }
+`;
+
+const RightPanel = styled.div`
+  flex: ${({ $isVisible, $flex }) => ($isVisible ? ($flex || 25) : 0)} 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  opacity: ${({ $isVisible }) => ($isVisible ? 1 : 0)};
+  pointer-events: ${({ $isVisible }) => ($isVisible ? 'auto' : 'none')};
+  transition: opacity 0.3s ease;
+`;
+
+const RightContent = styled.div`
+  padding: 20px;
+  overflow-y: auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: ${({ theme }) => theme.colors.background};
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.colors.border};
+    border-radius: 4px;
+
+    &:hover {
+      background: ${({ theme }) => theme.colors.secondary};
+    }
+  }
+`;
+
+const BackButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  background-color: ${({ theme }) => theme.colors.background};
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  align-self: flex-start;
+  margin-bottom: 20px;
+
+  &:hover {
+    background-color: ${({ theme }) =>
+      theme.colors.primary === '#0D0D0D' ? '#f0f0f0' : 'rgba(255,255,255,0.08)'};
+  }
+`;
+
+const SettingSection = styled.div`
+  display: flex;
+  gap: 24px;
+  margin-bottom: 24px;
+`;
+
+const SettingLabel = styled.div`
+  font-size: 14px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.primary};
+  width: 180px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const SettingContent = styled.div`
+  flex: 1;
+  min-width: 0;
+`;
+
+const Input = styled.input`
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 8px;
+  background-color: ${({ theme }) => theme.colors.background};
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+
+  &:focus {
+    border-color: ${({ theme }) => theme.colors.accent};
+  }
+`;
+
+const Select = styled.select`
+  width: 100%;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 8px;
+  background-color: ${({ theme }) => theme.colors.background};
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+
+  &:focus {
+    border-color: ${({ theme }) => theme.colors.accent};
+  }
+
+  &::-ms-expand {
+    display: none;
+  }
+
+  option {
+    width: 100%;
+    max-width: 100%;
+  }
+`;
+
+const CheckboxLabel = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 14px;
+  color: ${({ theme }) => theme.colors.primary};
+`;
+
+const Checkbox = styled.input`
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: ${({ theme }) => theme.colors.accent};
+`;
+
+const SaveButton = styled.button`
+  align-self: flex-end;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  background-color: ${({ theme }) => theme.colors.accent};
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+
+  &:hover {
+    opacity: 0.9;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 `;
 
@@ -113,12 +342,15 @@ const TableCell = styled.td`
 `;
 
 const ActionsCell = styled(TableCell)`
-  width: 44px;
-  min-width: 44px;
+  width: 132px;
+  min-width: 132px;
   padding: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 4px;
+  margin: 0 auto;
+  text-align: center;
 `;
 
 const ActionButton = styled.button`
@@ -176,6 +408,16 @@ export const IntegrationsPage = () => {
   const [integrations, setIntegrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingIntegration, setEditingIntegration] = useState(null);
+  const [integrationType, setIntegrationType] = useState('');
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    username: '',
+    url: '',
+    secret_key: ''
+  });
+  const [splitterPosition, setSplitterPosition] = useState(75);
 
   useEffect(() => {
     const fetchIntegrations = async () => {
@@ -231,6 +473,226 @@ export const IntegrationsPage = () => {
     fetchIntegrations();
   };
 
+  const handleCreate = () => {
+    setIsCreateOpen(true);
+    setEditingIntegration(null);
+    setIntegrationType('');
+    setCreateForm({
+      name: '',
+      username: '',
+      url: '',
+      secret_key: ''
+    });
+  };
+
+  const handleEdit = (integration, e) => {
+    e?.stopPropagation();
+    setEditingIntegration(integration);
+    setIsCreateOpen(false);
+    setIntegrationType(integration.type || '');
+    setCreateForm({
+      name: integration.name || '',
+      username: integration.username || '',
+      url: integration.url || '',
+      secret_key: integration.secret_key || ''
+    });
+  };
+
+  const handleCloseCreate = () => {
+    setIsCreateOpen(false);
+    setEditingIntegration(null);
+    setIntegrationType('');
+    setCreateForm({
+      name: '',
+      username: '',
+      url: '',
+      secret_key: ''
+    });
+  };
+
+  const handleSaveCreate = async () => {
+    if (!integrationType) {
+      alert('Пожалуйста, выберите тип интеграции');
+      return;
+    }
+
+    // Валидация полей в зависимости от типа интеграции
+    if (!createForm.name || !createForm.name.trim()) {
+      alert('Пожалуйста, заполните поле Name');
+      return;
+    }
+
+    if (!createForm.secret_key || !createForm.secret_key.trim()) {
+      alert('Пожалуйста, заполните поле Secret Key');
+      return;
+    }
+
+    if (integrationType === 'livechat') {
+      if (!createForm.username || !createForm.username.trim()) {
+        alert('Пожалуйста, заполните поле Username');
+        return;
+      }
+    } else if (integrationType === 'chatwoot') {
+      if (!createForm.url || !createForm.url.trim()) {
+        alert('Пожалуйста, заполните поле URL');
+        return;
+      }
+    }
+
+    try {
+      const token = getCookie('rb_admin_token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      
+      let requestBody;
+      let url;
+      
+      if (integrationType === 'livechat') {
+        url = 'http://68.183.71.165:18100/api/v1/settings/integrations/livechat';
+        requestBody = {
+          name: createForm.name.trim(),
+          type: 'livechat',
+          username: createForm.username.trim(),
+          secret_key: createForm.secret_key.trim()
+        };
+      } else if (integrationType === 'chatwoot') {
+        url = 'http://68.183.71.165:18100/api/v1/settings/integrations/chatwoot';
+        requestBody = {
+          name: createForm.name.trim(),
+          type: 'chatwoot',
+          url: createForm.url.trim(),
+          secret_key: createForm.secret_key.trim()
+        };
+      } else {
+        alert('Неверный тип интеграции');
+        return;
+      }
+      
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(requestBody)
+      });
+      
+      if (!res.ok) throw new Error(`Ошибка ${res.status}`);
+      
+      // Обновляем список интеграций
+      handleRefresh();
+      handleCloseCreate();
+    } catch (e) {
+      console.error('Ошибка при создании интеграции:', e);
+      alert('Ошибка при создании интеграции');
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingIntegration) return;
+
+    if (!integrationType) {
+      alert('Пожалуйста, выберите тип интеграции');
+      return;
+    }
+
+    // Валидация полей в зависимости от типа интеграции
+    if (!createForm.name || !createForm.name.trim()) {
+      alert('Пожалуйста, заполните поле Name');
+      return;
+    }
+
+    if (!createForm.secret_key || !createForm.secret_key.trim()) {
+      alert('Пожалуйста, заполните поле Secret Key');
+      return;
+    }
+
+    if (integrationType === 'livechat') {
+      if (!createForm.username || !createForm.username.trim()) {
+        alert('Пожалуйста, заполните поле Username');
+        return;
+      }
+    } else if (integrationType === 'chatwoot') {
+      if (!createForm.url || !createForm.url.trim()) {
+        alert('Пожалуйста, заполните поле URL');
+        return;
+      }
+    }
+
+    try {
+      const token = getCookie('rb_admin_token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      
+      let requestBody;
+      let url;
+      
+      if (integrationType === 'livechat') {
+        url = `http://68.183.71.165:18100/api/v1/settings/integrations/livechat/${editingIntegration.id}`;
+        requestBody = {
+          name: createForm.name.trim(),
+          type: 'livechat',
+          username: createForm.username.trim(),
+          secret_key: createForm.secret_key.trim()
+        };
+      } else if (integrationType === 'chatwoot') {
+        url = `http://68.183.71.165:18100/api/v1/settings/integrations/chatwoot/${editingIntegration.id}`;
+        requestBody = {
+          name: createForm.name.trim(),
+          type: 'chatwoot',
+          url: createForm.url.trim(),
+          secret_key: createForm.secret_key.trim()
+        };
+      } else {
+        alert('Неверный тип интеграции');
+        return;
+      }
+      
+      const res = await fetch(url, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify(requestBody)
+      });
+      
+      if (!res.ok) throw new Error(`Ошибка ${res.status}`);
+      
+      // Обновляем список интеграций
+      handleRefresh();
+      handleCloseCreate();
+    } catch (e) {
+      console.error('Ошибка при сохранении интеграции:', e);
+      alert('Ошибка при сохранении интеграции');
+    }
+  };
+
+  const handleDelete = async (integration, e) => {
+    e?.stopPropagation();
+    
+    if (!window.confirm(`Вы уверены, что хотите удалить интеграцию "${integration.name || integration.id}"?`)) {
+      return;
+    }
+    
+    try {
+      const token = getCookie('rb_admin_token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      
+      const res = await fetch(`http://68.183.71.165:18100/api/v1/settings/integrations/${integration.id}`, {
+        method: 'DELETE',
+        headers
+      });
+      
+      if (!res.ok) throw new Error(`Ошибка ${res.status}`);
+      
+      // Обновляем список интеграций
+      handleRefresh();
+    } catch (e) {
+      console.error('Ошибка при удалении интеграции:', e);
+      alert('Ошибка при удалении интеграции');
+    }
+  };
+
+  const updateForm = (field, value) => {
+    setCreateForm(prev => ({ ...prev, [field]: value }));
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -261,10 +723,15 @@ export const IntegrationsPage = () => {
               <Button theme={theme} onClick={handleRefresh}>
                 Refresh
               </Button>
+              <Button theme={theme} $primary onClick={handleCreate}>
+                Create
+              </Button>
             </ButtonsGroup>
           </HeaderSection>
 
-          <TableContainer>
+          <PageContainer>
+            <LeftPanel $flex={splitterPosition}>
+              <TableContainer>
             {error && <ErrorBlock>{error}</ErrorBlock>}
             {!error && (
               <>
@@ -279,7 +746,7 @@ export const IntegrationsPage = () => {
                         <TableHeaderCell theme={theme}>Username</TableHeaderCell>
                         <TableHeaderCell theme={theme}>URL</TableHeaderCell>
                         <TableHeaderCell theme={theme}>Secret Key</TableHeaderCell>
-                        <TableHeaderCell theme={theme} $width="44px">Actions</TableHeaderCell>
+                        <TableHeaderCell theme={theme} $width="132px">Actions</TableHeaderCell>
                       </TableHeaderRow>
                     </TableHeader>
                     <TableBody>
@@ -305,6 +772,21 @@ export const IntegrationsPage = () => {
                             >
                               <HiEye size={16} />
                             </ActionButton>
+                            <ActionButton
+                              theme={theme}
+                              onClick={(e) => handleEdit(integration, e)}
+                              title="Редактировать"
+                            >
+                              <HiPencil size={16} />
+                            </ActionButton>
+                            <ActionButton
+                              theme={theme}
+                              onClick={(e) => handleDelete(integration, e)}
+                              title="Удалить"
+                              style={{ color: '#ef4444' }}
+                            >
+                              <HiTrash size={16} />
+                            </ActionButton>
                           </ActionsCell>
                         </TableRow>
                       ))}
@@ -315,7 +797,103 @@ export const IntegrationsPage = () => {
                 )}
               </>
             )}
-          </TableContainer>
+              </TableContainer>
+            </LeftPanel>
+
+            <Divider 
+              theme={theme} 
+              $isHidden={!editingIntegration && !isCreateOpen}
+            />
+
+            <RightPanel theme={theme} $isVisible={!!editingIntegration || isCreateOpen} $flex={100 - splitterPosition}>
+              {(editingIntegration || isCreateOpen) && (
+                <RightContent theme={theme}>
+                  <BackButton theme={theme} onClick={handleCloseCreate}>
+                    ← Назад
+                  </BackButton>
+
+                  <SettingSection>
+                    <SettingLabel theme={theme}>Type:</SettingLabel>
+                    <SettingContent>
+                      <Select
+                        theme={theme}
+                        value={integrationType}
+                        onChange={(e) => setIntegrationType(e.target.value)}
+                        disabled={!!editingIntegration}
+                      >
+                        <option value="">Выберите тип интеграции</option>
+                        <option value="livechat">Livechat</option>
+                        <option value="chatwoot">Chatwoot</option>
+                      </Select>
+                    </SettingContent>
+                  </SettingSection>
+
+                  {integrationType && (
+                    <>
+                      <SettingSection>
+                        <SettingLabel theme={theme}>Name:</SettingLabel>
+                        <SettingContent>
+                          <Input
+                            theme={theme}
+                            type="text"
+                            value={createForm.name}
+                            onChange={(e) => updateForm('name', e.target.value)}
+                          />
+                        </SettingContent>
+                      </SettingSection>
+
+                      {integrationType === 'livechat' && (
+                        <SettingSection>
+                          <SettingLabel theme={theme}>Username:</SettingLabel>
+                          <SettingContent>
+                            <Input
+                              theme={theme}
+                              type="text"
+                              value={createForm.username}
+                              onChange={(e) => updateForm('username', e.target.value)}
+                              placeholder="bot@example.com"
+                            />
+                          </SettingContent>
+                        </SettingSection>
+                      )}
+
+                      {integrationType === 'chatwoot' && (
+                        <SettingSection>
+                          <SettingLabel theme={theme}>URL:</SettingLabel>
+                          <SettingContent>
+                            <Input
+                              theme={theme}
+                              type="text"
+                              value={createForm.url}
+                              onChange={(e) => updateForm('url', e.target.value)}
+                              placeholder="https://chatwoot.example.com"
+                            />
+                          </SettingContent>
+                        </SettingSection>
+                      )}
+
+                      <SettingSection>
+                        <SettingLabel theme={theme}>Secret Key:</SettingLabel>
+                        <SettingContent>
+                          <Input
+                            theme={theme}
+                            type="text"
+                            value={createForm.secret_key}
+                            onChange={(e) => updateForm('secret_key', e.target.value)}
+                            placeholder="sk-123abc"
+                          />
+                        </SettingContent>
+                      </SettingSection>
+                    </>
+                  )}
+
+                  <SaveButton theme={theme} onClick={editingIntegration ? handleSaveEdit : handleSaveCreate}>
+                    {editingIntegration ? 'Сохранить' : 'Создать'}
+                  </SaveButton>
+                </RightContent>
+              )}
+            </RightPanel>
+          </PageContainer>
         </PageContent>
       </ThemeProvider>
     </Layout>

@@ -9,6 +9,7 @@ import { ProjectsPage } from '../pages/ProjectsPage';
 import { ProjectDetailPage } from '../pages/ProjectDetailPage';
 import { IntegrationsPage } from '../pages/IntegrationsPage';
 import { IntegrationDetailPage } from '../pages/IntegrationDetailPage';
+import { AgentsPage } from '../pages/AgentsPage';
 
 const AppContent = () => {
   const { theme } = useTheme();
@@ -31,6 +32,7 @@ const AppContent = () => {
           <Route path="/chats/:id" element={<ChatReviewedDetailPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/projects/:id" element={<ProjectDetailPage />} />
+          <Route path="/agents" element={<AgentsPage />} />
         </Routes>
       </BrowserRouter>
     </StyledThemeProvider>

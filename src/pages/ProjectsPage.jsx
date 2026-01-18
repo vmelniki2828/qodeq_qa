@@ -579,10 +579,18 @@ export const ProjectsPage = () => {
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
       
+      // Формируем тело запроса с нужными полями
+      const requestBody = {
+        title: editForm.title,
+        url: editForm.url,
+        is_active: editForm.is_active,
+        code: editForm.code
+      };
+      
       const res = await fetch(`http://68.183.71.165:18100/api/v1/settings/project/${editingProject.id}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers,
-        body: JSON.stringify(editForm)
+        body: JSON.stringify(requestBody)
       });
       
       if (!res.ok) throw new Error(`Ошибка ${res.status}`);

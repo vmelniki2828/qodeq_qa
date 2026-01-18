@@ -67,8 +67,8 @@ const MenuItem = styled.div`
 const menuItems = [
   { label: 'Dashboard', path: '/dashboard' },
   { label: 'Integrations', path: '/integrations' },
-  { label: 'Chats', path: '/chats' },
   { label: 'Projects', path: '/projects' },
+  { label: 'Chats', path: '/chats' },
 ];
 
 export const Sidebar = () => {

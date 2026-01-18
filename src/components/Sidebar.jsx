@@ -68,8 +68,8 @@ const menuItems = [
   { label: 'Dashboard', path: '/dashboard' },
   { label: 'Integrations', path: '/integrations' },
   { label: 'Projects', path: '/projects' },
-  { label: 'Agents', path: '/agents' },
   { label: 'Chats', path: '/chats' },
+  { label: 'Agents', path: '/agents' },
 ];
 
 export const Sidebar = () => {

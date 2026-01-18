@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled, { ThemeProvider } from 'styled-components';
 import { useTheme } from '../contexts/ThemeContext';
@@ -418,6 +418,8 @@ export const IntegrationsPage = () => {
     secret_key: ''
   });
   const [splitterPosition, setSplitterPosition] = useState(75);
+  const [isDragging, setIsDragging] = useState(false);
+  const containerRef = useRef(null);
 
   useEffect(() => {
     const fetchIntegrations = async () => {
@@ -445,6 +447,41 @@ export const IntegrationsPage = () => {
     };
     fetchIntegrations();
   }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isDragging || !containerRef.current) return;
+      const container = containerRef.current;
+      const rect = container.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const percentage = (x / rect.width) * 100;
+      const clamped = Math.max(30, Math.min(85, percentage));
+      setSplitterPosition(clamped);
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isDragging]);
+
+  const handleDividerMouseDown = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
 
   const handleRefresh = () => {
     const fetchIntegrations = async () => {
@@ -729,7 +766,7 @@ export const IntegrationsPage = () => {
             </ButtonsGroup>
           </HeaderSection>
 
-          <PageContainer>
+          <PageContainer ref={containerRef}>
             <LeftPanel $flex={splitterPosition}>
               <TableContainer>
             {error && <ErrorBlock>{error}</ErrorBlock>}
@@ -803,6 +840,7 @@ export const IntegrationsPage = () => {
             <Divider 
               theme={theme} 
               $isHidden={!editingIntegration && !isCreateOpen}
+              onMouseDown={handleDividerMouseDown}
             />
 
             <RightPanel theme={theme} $isVisible={!!editingIntegration || isCreateOpen} $flex={100 - splitterPosition}>

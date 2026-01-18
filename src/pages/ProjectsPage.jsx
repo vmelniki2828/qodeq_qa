@@ -456,15 +456,6 @@ const FilterLabel = styled.label`
   letter-spacing: 0.5px;
 `;
 
-const FilterInput = styled(Input)`
-  font-size: 12px;
-  padding: 6px 10px;
-`;
-
-const FilterSelect = styled(Select)`
-  font-size: 12px;
-  padding: 6px 10px;
-`;
 
 export const ProjectsPage = () => {
   const { theme } = useTheme();
@@ -886,7 +877,7 @@ export const ProjectsPage = () => {
                 </FilterGroup>
                 <FilterGroup>
                   <FilterLabel theme={theme}>Code</FilterLabel>
-                  <FilterInput
+                  <Input
                     theme={theme}
                     type="text"
                     value={filters.code}
@@ -896,7 +887,7 @@ export const ProjectsPage = () => {
                 </FilterGroup>
                 <FilterGroup>
                   <FilterLabel theme={theme}>Is Active</FilterLabel>
-                  <FilterSelect
+                  <Select
                     theme={theme}
                     value={filters.is_active}
                     onChange={(e) => setFilters(prev => ({ ...prev, is_active: e.target.value }))}
@@ -904,7 +895,7 @@ export const ProjectsPage = () => {
                     <option value="">Все</option>
                     <option value="true">Active</option>
                     <option value="false">Inactive</option>
-                  </FilterSelect>
+                  </Select>
                 </FilterGroup>
                 <FilterButtons>
                   <Button theme={theme} onClick={handleApplyFilters}>

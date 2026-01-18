@@ -1,10 +1,16 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
 import styled, { ThemeProvider } from 'styled-components';
 import { useTheme } from '../contexts/ThemeContext';
 import { Layout } from '../components/Layout';
-import { Pagination } from '../components/Pagination';
-import { HiPencil, HiTrash, HiArrowUp, HiArrowDown, HiEye, HiChevronLeft } from 'react-icons/hi2';
+import { Loader } from '../components/Loader';
+import { HiCheck, HiXMark, HiArrowUp, HiArrowDown, HiPencil } from 'react-icons/hi2';
+
+const getCookie = (name) => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+  return null;
+};
 
 const HeaderSection = styled.div`
   display: flex;
@@ -50,77 +56,9 @@ const Button = styled.button`
     border-color: ${theme.colors.accent};
 
     &:hover {
-      background-color: ${theme.colors.accentHover || theme.colors.accent};
       opacity: 0.9;
     }
   `}
-`;
-
-const FiltersSection = styled.div`
-  padding: 20px;
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  flex-shrink: 0;
-`;
-
-const FilterLabel = styled.label`
-  font-size: 14px;
-  font-weight: 500;
-  color: ${({ theme }) => theme.colors.primary};
-  white-space: nowrap;
-`;
-
-const SearchInput = styled.input`
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 8px;
-  background-color: ${({ theme }) => theme.colors.background};
-  color: ${({ theme }) => theme.colors.primary};
-  font-size: 13px;
-  font-family: inherit;
-  outline: none;
-  transition: border-color 0.15s ease;
-  box-sizing: border-box;
-  max-width: 400px;
-
-  &:focus {
-    border-color: ${({ theme }) => theme.colors.primary};
-  }
-
-  &::placeholder {
-    color: ${({ theme }) => theme.colors.secondary};
-  }
-`;
-
-const SortSelect = styled.select`
-  padding: 8px 32px 8px 12px;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 8px;
-  background-color: ${({ theme }) => theme.colors.background};
-  color: ${({ theme }) => theme.colors.primary};
-  font-size: 13px;
-  cursor: pointer;
-  outline: none;
-  transition: border-color 0.15s ease;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236B6B6B' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 16px center;
-  background-size: 12px;
-  box-sizing: border-box;
-  min-width: 150px;
-
-  &:focus {
-    border-color: ${({ theme }) => theme.colors.primary};
-  }
-
-  option {
-    background-color: ${({ theme }) => theme.colors.background};
-    color: ${({ theme }) => theme.colors.primary};
-  }
 `;
 
 const PageContainer = styled.div`
@@ -133,16 +71,15 @@ const PageContainer = styled.div`
 `;
 
 const LeftPanel = styled.div`
-  width: ${({ $isFullWidth }) => ($isFullWidth ? '100%' : '75%')};
-  flex-shrink: 0;
+  flex: ${({ $flex }) => $flex || 75} 1 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: width 0.3s ease;
 `;
 
 const Divider = styled.div`
-  width: ${({ $isHidden }) => ($isHidden ? '0' : '1px')};
+  width: ${({ $isHidden }) => ($isHidden ? '0' : '4px')};
   background-color: ${({ theme }) => theme.colors.border};
   flex-shrink: 0;
   position: relative;
@@ -150,18 +87,32 @@ const Divider = styled.div`
   pointer-events: ${({ $isHidden }) => ($isHidden ? 'none' : 'auto')};
   overflow: hidden;
   transition: opacity 0.3s ease, width 0.3s ease;
+  cursor: col-resize;
+
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.accent};
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: -2px;
+    right: -2px;
+    top: 0;
+    bottom: 0;
+  }
 `;
 
 const RightPanel = styled.div`
-  width: ${({ $isVisible }) => ($isVisible ? '25%' : '0')};
-  flex-shrink: 0;
+  flex: ${({ $isVisible, $flex }) => ($isVisible ? ($flex || 25) : 0)} 1 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   position: relative;
   opacity: ${({ $isVisible }) => ($isVisible ? 1 : 0)};
   pointer-events: ${({ $isVisible }) => ($isVisible ? 'auto' : 'none')};
-  transition: opacity 0.3s ease, width 0.3s ease;
+  transition: opacity 0.3s ease;
 `;
 
 const RightContent = styled.div`
@@ -234,22 +185,39 @@ const SettingContent = styled.div`
   min-width: 0;
 `;
 
-const TextInput = styled.input`
+const Input = styled.input`
   width: 100%;
   padding: 8px 12px;
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
   background-color: ${({ theme }) => theme.colors.background};
   color: ${({ theme }) => theme.colors.primary};
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   outline: none;
   transition: border-color 0.15s ease;
   box-sizing: border-box;
 
   &:focus {
-    border-color: ${({ theme }) => theme.colors.primary};
+    border-color: ${({ theme }) => theme.colors.accent};
   }
+`;
+
+const CheckboxLabel = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 14px;
+  color: ${({ theme }) => theme.colors.primary};
+`;
+
+const Checkbox = styled.input`
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: ${({ theme }) => theme.colors.accent};
 `;
 
 const SaveButton = styled.button`
@@ -257,8 +225,8 @@ const SaveButton = styled.button`
   padding: 10px 20px;
   border-radius: 8px;
   border: none;
-  background-color: ${({ theme }) => theme.colors.primary};
-  color: ${({ theme }) => theme.colors.background};
+  background-color: ${({ theme }) => theme.colors.accent};
+  color: #fff;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -276,9 +244,29 @@ const SaveButton = styled.button`
   }
 `;
 
+const ActionButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: none;
+  background-color: transparent;
+  color: ${({ theme }) => theme.colors.secondary};
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background-color: ${({ theme }) =>
+      theme.colors.primary === '#0D0D0D' ? '#f0f0f0' : 'rgba(255,255,255,0.08)'};
+    color: ${({ theme }) => theme.colors.primary};
+  }
+`;
+
 const TableContainer = styled.div`
   flex: 1;
   padding: 20px;
+  overflow-x: auto;
 `;
 
 const Table = styled.table`
@@ -308,14 +296,18 @@ const TableHeaderCell = styled.th`
   letter-spacing: 0.5px;
   background-color: ${({ theme }) =>
     theme.colors.surface === '#F9FAFB' ? '#F0F1F3' : theme.colors.surface};
-  cursor: pointer;
+  cursor: ${({ $sortable }) => ($sortable ? 'pointer' : 'default')};
   user-select: none;
   transition: background-color 0.15s ease;
   position: relative;
 
   &:hover {
-    background-color: ${({ theme }) =>
-      theme.colors.primary === '#0D0D0D' ? '#f8f8f8' : 'rgba(255,255,255,0.04)'};
+    background-color: ${({ theme, $sortable }) =>
+      $sortable
+        ? theme.colors.primary === '#0D0D0D'
+          ? '#f8f8f8'
+          : 'rgba(255,255,255,0.04)'
+        : 'transparent'};
   }
 
   ${({ $sorted }) =>
@@ -357,144 +349,148 @@ const TableCell = styled.td`
   vertical-align: middle;
 `;
 
-const NameCell = styled(TableCell)`
-  text-align: left;
-`;
-
-const CreatedAtCell = styled(TableCell)`
-  font-size: 12px;
-`;
-
 const ActionsCell = styled(TableCell)`
-  width: 120px;
+  width: 44px;
+  min-width: 44px;
+  padding: 8px;
   display: flex;
-  gap: 8px;
   align-items: center;
   justify-content: center;
 `;
 
-const ActionButton = styled.button`
-  display: flex;
+const StatusBadge = styled.span`
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  padding: 6px;
-  border: none;
-  background-color: transparent;
-  color: ${({ theme }) => theme.colors.secondary};
-  cursor: pointer;
+  gap: 4px;
+  padding: 4px 8px;
   border-radius: 4px;
-  transition: all 0.15s ease;
-
-  &:hover {
-    background-color: ${({ theme }) =>
-      theme.colors.primary === '#0D0D0D' ? '#f0f0f0' : 'rgba(255,255,255,0.08)'};
-    color: ${({ theme }) => theme.colors.primary};
+  font-size: 12px;
+  font-weight: 500;
+  ${({ $active }) => $active 
+    ? 'background: rgba(34, 197, 94, 0.15); color: #16a34a;'
+    : 'background: rgba(239, 68, 68, 0.15); color: #dc2626;'
   }
-
-  ${({ $danger }) =>
-    $danger &&
-    `
-    &:hover {
-      color: #ef4444;
-      background-color: rgba(239,68,68,0.1);
-    }
-  `}
 `;
 
+const ErrorBlock = styled.div`
+  padding: 20px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 12px;
+  color: #dc2626;
+  font-size: 14px;
+`;
 
-// Моковые данные projects
-const mockProjects = [
-  {
-    id: 1,
-    _id: '68c317cec9fd0a7063555784',
-    name: 'kometa',
-    createdAt: '2025-09-11 18:41:18',
-  },
-  {
-    id: 2,
-    _id: '692ef7951a9b21f5a26a7702',
-    name: 'mers',
-    createdAt: '2025-09-11 18:41:14',
-  },
-  {
-    id: 3,
-    _id: '692ef7951a9b21f5a26a7703',
-    name: 'arkada',
-    createdAt: '2025-09-11 18:40:39',
-  },
-  {
-    id: 4,
-    _id: '692ef7951a9b21f5a26a7704',
-    name: 'r7',
-    createdAt: '2025-09-11 18:40:32',
-  },
-  {
-    id: 5,
-    _id: '692ef7951a9b21f5a26a7705',
-    name: 'kent',
-    createdAt: '2025-09-11 18:40:27',
-  },
-  {
-    id: 6,
-    _id: '692ef7951a9b21f5a26a7706',
-    name: 'daddy',
-    createdAt: '2025-09-11 18:40:23',
-  },
-  {
-    id: 7,
-    _id: '692ef7951a9b21f5a26a7707',
-    name: 'gama',
-    createdAt: '2025-09-11 18:40:19',
-  },
-  {
-    id: 8,
-    _id: '692ef7951a9b21f5a26a7708',
-    name: 'cat',
-    createdAt: '2025-09-11 18:40:16',
-  },
-];
+const EmptyState = styled.div`
+  padding: 40px 20px;
+  text-align: center;
+  color: ${({ theme }) => theme.colors.secondary};
+  font-size: 14px;
+`;
 
 export const ProjectsPage = () => {
   const { theme } = useTheme();
-  const navigate = useNavigate();
-  const [projects, setProjects] = useState(mockProjects);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortField, setSortField] = useState('created_at');
-  const [sortDirection, setSortDirection] = useState('desc');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [sortField, setSortField] = useState(null);
+  const [sortDirection, setSortDirection] = useState('asc');
+  const [editingProject, setEditingProject] = useState(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [editingProjectId, setEditingProjectId] = useState(null);
-  const [newProject, setNewProject] = useState({
-    name: '',
+  const [editForm, setEditForm] = useState({
+    title: '',
+    code: '',
+    url: '',
+    is_active: true,
+    integration_id: ''
   });
+  const [splitterPosition, setSplitterPosition] = useState(75);
+  const [isDragging, setIsDragging] = useState(false);
+  const containerRef = useRef(null);
 
-  const filteredProjects = projects.filter((item) => {
-    const matchesSearch =
-      !searchQuery ||
-      item.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
-  });
+  useEffect(() => {
+    const fetchProjects = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const token = getCookie('rb_admin_token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        
+        const res = await fetch('http://68.183.71.165:18100/api/v1/settings/project/?skip=0&limit=10', {
+          method: 'GET',
+          headers
+        });
+        
+        if (!res.ok) throw new Error(`Ошибка ${res.status}`);
+        const json = await res.json();
+        setProjects(Array.isArray(json) ? json : []);
+      } catch (e) {
+        setError(e.message);
+        setProjects([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProjects();
+  }, []);
 
-  const sortedProjects = [...filteredProjects].sort((a, b) => {
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isDragging || !containerRef.current) return;
+      const container = containerRef.current;
+      const rect = container.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const percentage = (x / rect.width) * 100;
+      const clamped = Math.max(30, Math.min(85, percentage));
+      setSplitterPosition(clamped);
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isDragging]);
+
+  const handleDividerMouseDown = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const sortedProjects = [...projects].sort((a, b) => {
     if (!sortField) return 0;
-
-    let aValue, bValue;
-
+    let aVal, bVal;
     switch (sortField) {
-      case 'name':
-        aValue = a.name.toLowerCase();
-        bValue = b.name.toLowerCase();
+      case 'title':
+        aVal = (a.title || '').toLowerCase();
+        bVal = (b.title || '').toLowerCase();
         break;
-      case 'created_at':
-        aValue = a.createdAt || '';
-        bValue = b.createdAt || '';
+      case 'code':
+        aVal = (a.code || '').toLowerCase();
+        bVal = (b.code || '').toLowerCase();
+        break;
+      case 'is_active':
+        aVal = a.is_active ? 1 : 0;
+        bVal = b.is_active ? 1 : 0;
         break;
       default:
         return 0;
     }
-
-    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+    if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
     return 0;
   });
 
@@ -513,90 +509,147 @@ export const ProjectsPage = () => {
   };
 
   const handleRefresh = () => {
-    console.log('Refresh projects');
+    const fetchProjects = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const token = getCookie('rb_admin_token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        
+        const res = await fetch('http://68.183.71.165:18100/api/v1/settings/project/?skip=0&limit=10', {
+          method: 'GET',
+          headers
+        });
+        
+        if (!res.ok) throw new Error(`Ошибка ${res.status}`);
+        const json = await res.json();
+        setProjects(Array.isArray(json) ? json : []);
+      } catch (e) {
+        setError(e.message);
+        setProjects([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProjects();
   };
 
   const handleCreate = () => {
-    setEditingProjectId(null);
-    setNewProject({
-      name: '',
-    });
     setIsCreateOpen(true);
-  };
-
-  const handleCloseCreate = () => {
-    setIsCreateOpen(false);
-    setEditingProjectId(null);
-    setNewProject({
-      name: '',
+    setEditingProject(null);
+    setEditForm({
+      title: '',
+      code: '',
+      url: '',
+      is_active: true,
+      integration_id: ''
     });
   };
 
-  const handleSaveProject = () => {
-    if (editingProjectId) {
-      // Update existing project
-      setProjects((prevProjects) =>
-        prevProjects.map((item) =>
-          item.id === editingProjectId
-            ? {
-                ...item,
-                name: newProject.name,
-              }
-            : item
-        )
-      );
-      console.log('Update project:', editingProjectId, newProject);
-    } else {
-      // Create new project
-      const newId = Math.max(...projects.map((t) => t.id), 0) + 1;
-      const createdProject = {
-        id: newId,
-        _id: `692ef7951a9b21f5a26a${String(newId).padStart(4, '0')}`,
-        name: newProject.name,
-        createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-      };
-      setProjects((prevProjects) => [...prevProjects, createdProject]);
-      console.log('Create new project', createdProject);
-    }
-    handleCloseCreate();
-  };
-
-  const handleView = (projectId, e) => {
+  const handleEdit = (project, e) => {
     e?.stopPropagation();
-    const item = projects.find((t) => t.id === projectId);
-    if (item && item._id) {
-      navigate(`/models/projects/${item._id}`);
-    } else {
-      navigate(`/models/projects/${projectId}`);
-    }
+    setEditingProject(project);
+    setIsCreateOpen(false);
+    setEditForm({
+      title: project.title || '',
+      code: project.code || '',
+      url: project.url || '',
+      is_active: project.is_active ?? true
+    });
   };
 
-  const handleEdit = (projectId, e) => {
-    e.stopPropagation();
-    const item = projects.find((t) => t.id === projectId);
-    if (item) {
-      setEditingProjectId(projectId);
-      setNewProject({
-        name: item.name,
+  const handleCloseEdit = () => {
+    setEditingProject(null);
+    setIsCreateOpen(false);
+    setEditForm({
+      title: '',
+      code: '',
+      url: '',
+      is_active: true,
+      integration_id: ''
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingProject) return;
+    
+    try {
+      const token = getCookie('rb_admin_token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      
+      const res = await fetch(`http://68.183.71.165:18100/api/v1/settings/project/${editingProject.id}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(editForm)
       });
-      setIsCreateOpen(true);
+      
+      if (!res.ok) throw new Error(`Ошибка ${res.status}`);
+      
+      // Обновляем список проектов
+      handleRefresh();
+      handleCloseEdit();
+    } catch (e) {
+      console.error('Ошибка при сохранении проекта:', e);
+      alert('Ошибка при сохранении проекта');
     }
   };
 
-  const handleDelete = (projectId, e) => {
-    e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this project?')) {
-      setProjects((prevProjects) => prevProjects.filter((item) => item.id !== projectId));
-      console.log('Delete project', projectId);
+  const handleSaveCreate = async () => {
+    try {
+      const token = getCookie('rb_admin_token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      
+      const requestBody = {
+        title: editForm.title,
+        is_active: editForm.is_active,
+        url: editForm.url,
+        code: editForm.code,
+        integration_id: editForm.integration_id || '3fa85f64-5717-4562-b3fc-2c963f66afa6'
+      };
+      
+      const res = await fetch('http://68.183.71.165:18100/api/v1/settings/project/', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(requestBody)
+      });
+      
+      if (!res.ok) throw new Error(`Ошибка ${res.status}`);
+      
+      // Обновляем список проектов
+      handleRefresh();
+      handleCloseEdit();
+    } catch (e) {
+      console.error('Ошибка при создании проекта:', e);
+      alert('Ошибка при создании проекта');
     }
   };
 
-  const ITEMS_PER_PAGE = 10;
-  const totalProjects = sortedProjects.length;
-  const totalPages = Math.ceil(totalProjects / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-  const paginatedProjects = sortedProjects.slice(startIndex, endIndex);
+  const updateForm = (field, value) => {
+    setEditForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  if (loading) {
+    return (
+      <Layout>
+        <ThemeProvider theme={theme}>
+          <div
+            style={{
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Loader />
+          </div>
+        </ThemeProvider>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -621,137 +674,185 @@ export const ProjectsPage = () => {
             </ButtonsGroup>
           </HeaderSection>
 
-          <FiltersSection theme={theme}>
-            <FilterLabel theme={theme}>Search:</FilterLabel>
-            <SearchInput
-              theme={theme}
-              type="text"
-              placeholder="Search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <FilterLabel theme={theme}>Created At:</FilterLabel>
-            <SortSelect
-              theme={theme}
-              value={sortField}
-              onChange={(e) => setSortField(e.target.value)}
-            >
-              <option value="created_at">Created At</option>
-              <option value="name">Name</option>
-            </SortSelect>
-            <FilterLabel theme={theme}>Desc:</FilterLabel>
-            <SortSelect
-              theme={theme}
-              value={sortDirection}
-              onChange={(e) => setSortDirection(e.target.value)}
-            >
-              <option value="desc">Desc</option>
-              <option value="asc">Asc</option>
-            </SortSelect>
-          </FiltersSection>
-
-          <PageContainer>
-            <LeftPanel $isFullWidth={!isCreateOpen}>
+          <PageContainer ref={containerRef}>
+            <LeftPanel $flex={splitterPosition}>
               <TableContainer>
-                <Table theme={theme}>
-                  <TableHeader theme={theme}>
-                    <TableHeaderRow>
-                      <TableHeaderCell
-                        theme={theme}
-                        onClick={() => handleSort('name')}
-                        $sorted={sortField === 'name'}
-                      >
-                        Name
-                        <SortIcon>{getSortIcon('name')}</SortIcon>
-                      </TableHeaderCell>
-                      <TableHeaderCell
-                        theme={theme}
-                        onClick={() => handleSort('created_at')}
-                        $sorted={sortField === 'created_at'}
-                      >
-                        Created At
-                        <SortIcon>{getSortIcon('created_at')}</SortIcon>
-                      </TableHeaderCell>
-                      <TableHeaderCell theme={theme} $width="120px">
-                        Actions
-                      </TableHeaderCell>
-                    </TableHeaderRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedProjects.map((item) => (
-                      <TableRow key={item.id} theme={theme}>
-                        <NameCell theme={theme}>{item.name}</NameCell>
-                        <CreatedAtCell theme={theme}>{item.createdAt}</CreatedAtCell>
-                        <ActionsCell theme={theme}>
-                          <ActionButton
-                            theme={theme}
-                            onClick={(e) => handleView(item.id, e)}
-                            title="View"
-                          >
-                            <HiEye size={16} />
-                          </ActionButton>
-                          <ActionButton
-                            theme={theme}
-                            onClick={(e) => handleEdit(item.id, e)}
-                            title="Edit"
-                          >
-                            <HiPencil size={16} />
-                          </ActionButton>
-                          <ActionButton
-                            theme={theme}
-                            $danger
-                            onClick={(e) => handleDelete(item.id, e)}
-                            title="Delete"
-                          >
-                            <HiTrash size={16} />
-                          </ActionButton>
-                        </ActionsCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                {error && <ErrorBlock>{error}</ErrorBlock>}
+                {!error && (
+                  <>
+                    {projects.length > 0 ? (
+                      <Table theme={theme}>
+                        <TableHeader theme={theme}>
+                          <TableHeaderRow>
+                            <TableHeaderCell 
+                              theme={theme} 
+                              $sortable
+                              onClick={() => handleSort('title')} 
+                              $sorted={sortField === 'title'}
+                            >
+                              Title <SortIcon>{getSortIcon('title')}</SortIcon>
+                            </TableHeaderCell>
+                            <TableHeaderCell 
+                              theme={theme} 
+                              $sortable
+                              onClick={() => handleSort('code')} 
+                              $sorted={sortField === 'code'}
+                            >
+                              Code <SortIcon>{getSortIcon('code')}</SortIcon>
+                            </TableHeaderCell>
+                            <TableHeaderCell theme={theme}>URL</TableHeaderCell>
+                            <TableHeaderCell 
+                              theme={theme} 
+                              $sortable
+                              onClick={() => handleSort('is_active')} 
+                              $sorted={sortField === 'is_active'}
+                            >
+                              Status <SortIcon>{getSortIcon('is_active')}</SortIcon>
+                            </TableHeaderCell>
+                            <TableHeaderCell theme={theme} $width="44px"> </TableHeaderCell>
+                          </TableHeaderRow>
+                        </TableHeader>
+                        <TableBody>
+                          {sortedProjects.map((project) => (
+                            <TableRow key={project.id} theme={theme}>
+                              <TableCell theme={theme}>{project.title || '—'}</TableCell>
+                              <TableCell theme={theme}>{project.code || '—'}</TableCell>
+                              <TableCell theme={theme}>
+                                {project.url ? (
+                                  <a 
+                                    href={project.url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    style={{ color: theme.colors.accent, textDecoration: 'underline' }}
+                                  >
+                                    {project.url}
+                                  </a>
+                                ) : '—'}
+                              </TableCell>
+                              <TableCell theme={theme}>
+                                <StatusBadge $active={project.is_active}>
+                                  {project.is_active ? (
+                                    <>
+                                      <HiCheck size={14} />
+                                      Active
+                                    </>
+                                  ) : (
+                                    <>
+                                      <HiXMark size={14} />
+                                      Inactive
+                                    </>
+                                  )}
+                                </StatusBadge>
+                              </TableCell>
+                              <ActionsCell theme={theme}>
+                                <ActionButton 
+                                  theme={theme} 
+                                  onClick={(e) => handleEdit(project, e)} 
+                                  title="Редактировать"
+                                >
+                                  <HiPencil size={16} />
+                                </ActionButton>
+                              </ActionsCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <EmptyState theme={theme}>Нет проектов</EmptyState>
+                    )}
+                  </>
+                )}
               </TableContainer>
             </LeftPanel>
 
-            <Divider $isHidden={!isCreateOpen} theme={theme} />
+            <Divider 
+              theme={theme} 
+              $isHidden={!editingProject && !isCreateOpen}
+              onMouseDown={handleDividerMouseDown}
+            />
 
-            <RightPanel $isVisible={isCreateOpen} theme={theme}>
-              <RightContent theme={theme}>
-                <BackButton theme={theme} onClick={handleCloseCreate}>
-                  <HiChevronLeft size={16} />
-                  Back
-                </BackButton>
+            <RightPanel theme={theme} $isVisible={!!editingProject || isCreateOpen} $flex={100 - splitterPosition}>
+              {(editingProject || isCreateOpen) && (
+                <RightContent theme={theme}>
+                  <BackButton theme={theme} onClick={handleCloseEdit}>
+                    ← Назад
+                  </BackButton>
 
-                <SettingSection>
-                  <SettingLabel theme={theme}>Name</SettingLabel>
-                  <SettingContent>
-                    <TextInput
-                      theme={theme}
-                      type="text"
-                      value={newProject.name}
-                      onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
-                      placeholder="Enter project name"
-                    />
-                  </SettingContent>
-                </SettingSection>
+                  <SettingSection>
+                    <SettingLabel theme={theme}>Title:</SettingLabel>
+                    <SettingContent>
+                      <Input
+                        theme={theme}
+                        type="text"
+                        value={editForm.title}
+                        onChange={(e) => updateForm('title', e.target.value)}
+                      />
+                    </SettingContent>
+                  </SettingSection>
 
-                <SaveButton theme={theme} onClick={handleSaveProject}>
-                  {editingProjectId ? 'Save Changes' : 'Create Project'}
-                </SaveButton>
-              </RightContent>
+                  <SettingSection>
+                    <SettingLabel theme={theme}>Code:</SettingLabel>
+                    <SettingContent>
+                      <Input
+                        theme={theme}
+                        type="text"
+                        value={editForm.code}
+                        onChange={(e) => updateForm('code', e.target.value)}
+                      />
+                    </SettingContent>
+                  </SettingSection>
+
+                  <SettingSection>
+                    <SettingLabel theme={theme}>URL:</SettingLabel>
+                    <SettingContent>
+                      <Input
+                        theme={theme}
+                        type="text"
+                        value={editForm.url}
+                        onChange={(e) => updateForm('url', e.target.value)}
+                      />
+                    </SettingContent>
+                  </SettingSection>
+
+                  <SettingSection>
+                    <SettingLabel theme={theme}>Active:</SettingLabel>
+                    <SettingContent>
+                      <CheckboxLabel theme={theme}>
+                        <Checkbox
+                          type="checkbox"
+                          checked={editForm.is_active}
+                          onChange={(e) => updateForm('is_active', e.target.checked)}
+                          theme={theme}
+                        />
+                        <span>Активен</span>
+                      </CheckboxLabel>
+                    </SettingContent>
+                  </SettingSection>
+
+                  {isCreateOpen && (
+                    <SettingSection>
+                      <SettingLabel theme={theme}>Integration ID:</SettingLabel>
+                      <SettingContent>
+                        <Input
+                          theme={theme}
+                          type="text"
+                          value={editForm.integration_id}
+                          onChange={(e) => updateForm('integration_id', e.target.value)}
+                          placeholder="3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                        />
+                      </SettingContent>
+                    </SettingSection>
+                  )}
+
+                  <SaveButton theme={theme} onClick={editingProject ? handleSaveEdit : handleSaveCreate}>
+                    {editingProject ? 'Сохранить' : 'Создать'}
+                  </SaveButton>
+                </RightContent>
+              )}
             </RightPanel>
           </PageContainer>
-
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={totalProjects}
-            onPageChange={setCurrentPage}
-            itemsPerPage={10}
-          />
         </div>
       </ThemeProvider>
     </Layout>
   );
 };
-

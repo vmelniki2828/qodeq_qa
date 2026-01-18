@@ -18,6 +18,9 @@ import { PingDataDetailPage } from '../pages/PingDataDetailPage';
 import { ChatsPage } from '../pages/ChatsPage';
 import { ChatReviewedDetailPage } from '../pages/ChatReviewedDetailPage';
 import { ChatDetailPage } from '../pages/ChatDetailPage';
+import { ProjectsPage } from '../pages/ProjectsPage';
+import { IntegrationsPage } from '../pages/IntegrationsPage';
+import { IntegrationDetailPage } from '../pages/IntegrationDetailPage';
 import { MessageTemplatesPage } from '../pages/MessageTemplatesPage';
 import { MessageTemplateDetailPage } from '../pages/MessageTemplateDetailPage';
 import { TicketsPage } from '../pages/TicketsPage';
@@ -30,7 +33,6 @@ import { OCRResultsPage } from '../pages/OCRResultsPage';
 import { OCRResultsDetailPage } from '../pages/OCRResultsDetailPage';
 import { GatewaysPage } from '../pages/GatewaysPage';
 import { GatewayDetailPage } from '../pages/GatewayDetailPage';
-import { ProjectsPage } from '../pages/ProjectsPage';
 import { ProjectDetailPage } from '../pages/ProjectDetailPage';
 import { TagsPage } from '../pages/TagsPage';
 import { TagDetailPage } from '../pages/TagDetailPage';
@@ -54,8 +56,11 @@ const AppContent = () => {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/integrations" element={<IntegrationsPage />} />
+          <Route path="/integrations/:id" element={<IntegrationDetailPage />} />
           <Route path="/chats" element={<ChatsPage />} />
           <Route path="/chats/:id" element={<ChatReviewedDetailPage />} />
+          <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/playground" element={<PlaygroundPage />} />
           <Route path="/system" element={<SystemPage />} />
           <Route path="/telegram-tools" element={<TelegramToolsPage />} />

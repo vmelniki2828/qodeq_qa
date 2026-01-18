@@ -21,6 +21,34 @@ const formatDate = (v) => {
   } catch (e) { return v; }
 };
 
+const renderTextWithLinks = (text, theme) => {
+  if (!text) return '—';
+  
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  
+  return parts.map((part, index) => {
+    if (urlRegex.test(part)) {
+      return (
+        <a
+          key={index}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            color: theme.colors.primary,
+            textDecoration: 'underline',
+            wordBreak: 'break-all'
+          }}
+        >
+          {part}
+        </a>
+      );
+    }
+    return <span key={index}>{part}</span>;
+  });
+};
+
 const PageContent = styled.div`
   min-height: 100%;
   display: flex;
@@ -259,6 +287,29 @@ const ResultsSection = styled.div`
   min-width: 0;
   overflow: hidden;
   padding: 20px;
+`;
+
+const CheckButton = styled.button`
+  margin-top: 20px;
+  padding: 12px 24px;
+  background: ${({ theme }) => theme.colors.accent};
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  align-self: flex-end;
+
+  &:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
 `;
 
 const SectionTitle = styled.h3`
@@ -547,6 +598,8 @@ export const ChatReviewedDetailPage = () => {
   const containerRef = useRef(null);
   const [expandedResults, setExpandedResults] = useState(new Set());
   const [localDecisions, setLocalDecisions] = useState({});
+  const [tagsSettings, setTagsSettings] = useState(null);
+  const [selectedTags, setSelectedTags] = useState({});
 
   useEffect(() => {
     if (!id) {
@@ -573,6 +626,23 @@ export const ChatReviewedDetailPage = () => {
     };
     fetchChat();
   }, [id]);
+
+  useEffect(() => {
+    const fetchTagsSettings = async () => {
+      try {
+        const token = getCookie('rb_admin_token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch('http://68.183.71.165:18100/api/v1/settings/tags/', { method: 'GET', headers });
+        if (!res.ok) throw new Error(`Ошибка ${res.status}`);
+        const json = await res.json();
+        setTagsSettings(json);
+      } catch (e) {
+        console.error('Ошибка при загрузке настроек тегов:', e);
+      }
+    };
+    fetchTagsSettings();
+  }, []);
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -819,7 +889,7 @@ export const ChatReviewedDetailPage = () => {
                               </MessageAuthor>
                               <MessageTime theme={theme}>{formatDate(msg.created_at)}</MessageTime>
                             </MessageHeader>
-                            <MessageText theme={theme}>{msg.text || '—'}</MessageText>
+                            <MessageText theme={theme}>{renderTextWithLinks(msg.text, theme)}</MessageText>
                           </MessageCard>
                         );
                       })}
@@ -916,15 +986,80 @@ export const ChatReviewedDetailPage = () => {
                                       {result.manager_comment && (
                                         <ResultComment theme={theme}>Комментарий: {result.manager_comment}</ResultComment>
                                       )}
+                                      
+                                      {/* Показываем существующие теги */}
                                       {result.tags && Array.isArray(result.tags) && result.tags.length > 0 && (
-                                        <div style={{ marginTop: '6px', display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                                          {result.tags.map((tag, i) => (
-                                            <span key={i} style={{ fontSize: '10px', padding: '2px 6px', background: theme.colors.background, border: `1px solid ${theme.colors.border}`, borderRadius: '4px', color: theme.colors.secondary }}>
-                                              {String(tag)}
-                                            </span>
-                                          ))}
+                                        <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                          {result.tags.map((tag, i) => {
+                                            const tagName = typeof tag === 'object' && tag !== null ? tag.name : String(tag);
+                                            const tagId = typeof tag === 'object' && tag !== null ? tag.id : i;
+                                            return (
+                                              <span key={tagId || i} style={{ fontSize: '12px', padding: '4px 10px', background: theme.colors.background, border: `1px solid ${theme.colors.border}`, borderRadius: '6px', color: theme.colors.secondary, fontWeight: 500 }}>
+                                                {tagName}
+                                              </span>
+                                            );
+                                          })}
                                         </div>
                                       )}
+                                      
+                                      {/* Показываем доступные теги из settings, если decision = false и блок развернут */}
+                                      {isExpanded && !currentDecision && tagsSettings && Array.isArray(tagsSettings) && (() => {
+                                        const questionSettings = tagsSettings.find(item => item.question === result.question);
+                                        if (!questionSettings || !questionSettings.tags) return null;
+                                        
+                                        const availableTags = Object.values(questionSettings.tags).filter(tag => tag.active);
+                                        const resultTagsIds = result.tags ? result.tags.map(t => typeof t === 'object' && t !== null ? t.id : null).filter(Boolean) : [];
+                                        
+                                        const resultIdKey = `${resultId}`;
+                                        const selectedForResult = selectedTags[resultIdKey] || [];
+                                        
+                                        return (
+                                          <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: `1px solid ${theme.colors.border}` }}>
+                                            <div style={{ fontSize: '12px', fontWeight: 600, color: theme.colors.secondary, marginBottom: '8px' }}>
+                                              Доступные теги:
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                              {availableTags.map((tag) => {
+                                                const isSelected = resultTagsIds.includes(tag.id) || selectedForResult.includes(tag.id);
+                                                return (
+                                                  <label
+                                                    key={tag.id}
+                                                    style={{
+                                                      display: 'inline-flex',
+                                                      alignItems: 'center',
+                                                      fontSize: '12px',
+                                                      padding: '4px 10px',
+                                                      background: isSelected ? theme.colors.accent : theme.colors.background,
+                                                      border: `1px solid ${isSelected ? theme.colors.accent : theme.colors.border}`,
+                                                      borderRadius: '6px',
+                                                      color: isSelected ? '#fff' : theme.colors.secondary,
+                                                      fontWeight: 500,
+                                                      cursor: 'pointer',
+                                                      transition: 'all 0.2s ease'
+                                                    }}
+                                                  >
+                                                    <input
+                                                      type="checkbox"
+                                                      checked={isSelected}
+                                                      onChange={(e) => {
+                                                        const newSelected = e.target.checked
+                                                          ? [...selectedForResult, tag.id]
+                                                          : selectedForResult.filter(id => id !== tag.id);
+                                                        setSelectedTags(prev => ({
+                                                          ...prev,
+                                                          [resultIdKey]: newSelected
+                                                        }));
+                                                      }}
+                                                      style={{ marginRight: '6px', cursor: 'pointer' }}
+                                                    />
+                                                    {tag.name}
+                                                  </label>
+                                                );
+                                              })}
+                                            </div>
+                                          </div>
+                                        );
+                                      })()}
                                     </ResultContent>
                                   </ResultItem>
                                 );
@@ -938,6 +1073,11 @@ export const ChatReviewedDetailPage = () => {
                     </ResultsList>
                   ) : (
                     <EmptyState theme={theme}>Нет результатов</EmptyState>
+                  )}
+                  {Object.keys(results).length > 0 && (
+                    <CheckButton theme={theme}>
+                      Проверить
+                    </CheckButton>
                   )}
                 </ResultsSection>
               </ResizableContainer>

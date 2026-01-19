@@ -4,7 +4,8 @@ import styled, { ThemeProvider } from 'styled-components';
 import { useTheme } from '../contexts/ThemeContext';
 import { Layout } from '../components/Layout';
 import { Loader } from '../components/Loader';
-import { HiCheck, HiXMark, HiEye, HiTrash, HiPencil } from 'react-icons/hi2';
+import { HiCheck, HiXMark, HiEye, HiTrash, HiPencil, HiSignal } from 'react-icons/hi2';
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
 const getCookie = (name) => {
   const value = `; ${document.cookie}`;
@@ -326,8 +327,8 @@ const TableCell = styled.td`
 `;
 
 const ActionsCell = styled(TableCell)`
-  width: 132px;
-  min-width: 132px;
+  width: 168px;
+  min-width: 168px;
   padding: 8px;
   display: flex;
   align-items: center;
@@ -425,6 +426,7 @@ export const IntegrationsPage = () => {
       } catch (e) {
         setError(e.message);
         setIntegrations([]);
+        // Не показываем уведомление при начальной загрузке, только при явных действиях
       } finally {
         setLoading(false);
       }
@@ -487,6 +489,7 @@ export const IntegrationsPage = () => {
       } catch (e) {
         setError(e.message);
         setIntegrations([]);
+        Notify.failure('Ошибка при обновлении списка интеграций');
       } finally {
         setLoading(false);
       }
@@ -533,29 +536,29 @@ export const IntegrationsPage = () => {
 
   const handleSaveCreate = async () => {
     if (!integrationType) {
-      alert('Пожалуйста, выберите тип интеграции');
+      Notify.failure('Пожалуйста, выберите тип интеграции');
       return;
     }
 
     // Валидация полей в зависимости от типа интеграции
     if (!createForm.name || !createForm.name.trim()) {
-      alert('Пожалуйста, заполните поле Name');
+      Notify.failure('Пожалуйста, заполните поле Name');
       return;
     }
 
     if (!createForm.secret_key || !createForm.secret_key.trim()) {
-      alert('Пожалуйста, заполните поле Secret Key');
+      Notify.failure('Пожалуйста, заполните поле Secret Key');
       return;
     }
 
     if (integrationType === 'livechat') {
       if (!createForm.username || !createForm.username.trim()) {
-        alert('Пожалуйста, заполните поле Username');
+        Notify.failure('Пожалуйста, заполните поле Username');
         return;
       }
     } else if (integrationType === 'chatwoot') {
       if (!createForm.url || !createForm.url.trim()) {
-        alert('Пожалуйста, заполните поле URL');
+        Notify.failure('Пожалуйста, заполните поле URL');
         return;
       }
     }
@@ -585,7 +588,7 @@ export const IntegrationsPage = () => {
           secret_key: createForm.secret_key.trim()
         };
       } else {
-        alert('Неверный тип интеграции');
+        Notify.failure('Неверный тип интеграции');
         return;
       }
       
@@ -600,9 +603,10 @@ export const IntegrationsPage = () => {
       // Обновляем список интеграций
       handleRefresh();
       handleCloseCreate();
+      Notify.success('Интеграция успешно создана');
     } catch (e) {
       console.error('Ошибка при создании интеграции:', e);
-      alert('Ошибка при создании интеграции');
+      Notify.failure('Ошибка при создании интеграции');
     }
   };
 
@@ -610,29 +614,29 @@ export const IntegrationsPage = () => {
     if (!editingIntegration) return;
 
     if (!integrationType) {
-      alert('Пожалуйста, выберите тип интеграции');
+      Notify.failure('Пожалуйста, выберите тип интеграции');
       return;
     }
 
     // Валидация полей в зависимости от типа интеграции
     if (!createForm.name || !createForm.name.trim()) {
-      alert('Пожалуйста, заполните поле Name');
+      Notify.failure('Пожалуйста, заполните поле Name');
       return;
     }
 
     if (!createForm.secret_key || !createForm.secret_key.trim()) {
-      alert('Пожалуйста, заполните поле Secret Key');
+      Notify.failure('Пожалуйста, заполните поле Secret Key');
       return;
     }
 
     if (integrationType === 'livechat') {
       if (!createForm.username || !createForm.username.trim()) {
-        alert('Пожалуйста, заполните поле Username');
+        Notify.failure('Пожалуйста, заполните поле Username');
         return;
       }
     } else if (integrationType === 'chatwoot') {
       if (!createForm.url || !createForm.url.trim()) {
-        alert('Пожалуйста, заполните поле URL');
+        Notify.failure('Пожалуйста, заполните поле URL');
         return;
       }
     }
@@ -643,10 +647,9 @@ export const IntegrationsPage = () => {
       if (token) headers['Authorization'] = `Bearer ${token}`;
       
       let requestBody;
-      let url;
+      const url = `http://68.183.71.165:18100/api/v1/settings/integrations/${editingIntegration.id}`;
       
       if (integrationType === 'livechat') {
-        url = `http://68.183.71.165:18100/api/v1/settings/integrations/livechat/${editingIntegration.id}`;
         requestBody = {
           name: createForm.name.trim(),
           type: 'livechat',
@@ -654,7 +657,6 @@ export const IntegrationsPage = () => {
           secret_key: createForm.secret_key.trim()
         };
       } else if (integrationType === 'chatwoot') {
-        url = `http://68.183.71.165:18100/api/v1/settings/integrations/chatwoot/${editingIntegration.id}`;
         requestBody = {
           name: createForm.name.trim(),
           type: 'chatwoot',
@@ -662,7 +664,7 @@ export const IntegrationsPage = () => {
           secret_key: createForm.secret_key.trim()
         };
       } else {
-        alert('Неверный тип интеграции');
+        Notify.failure('Неверный тип интеграции');
         return;
       }
       
@@ -677,9 +679,10 @@ export const IntegrationsPage = () => {
       // Обновляем список интеграций
       handleRefresh();
       handleCloseCreate();
+      Notify.success('Интеграция успешно обновлена');
     } catch (e) {
       console.error('Ошибка при сохранении интеграции:', e);
-      alert('Ошибка при сохранении интеграции');
+      Notify.failure('Ошибка при сохранении интеграции');
     }
   };
 
@@ -704,9 +707,39 @@ export const IntegrationsPage = () => {
       
       // Обновляем список интеграций
       handleRefresh();
+      Notify.success('Интеграция успешно удалена');
     } catch (e) {
       console.error('Ошибка при удалении интеграции:', e);
-      alert('Ошибка при удалении интеграции');
+      Notify.failure('Ошибка при удалении интеграции');
+    }
+  };
+
+  const handleCheckConnection = async (integration, e) => {
+    e?.stopPropagation();
+    
+    try {
+      const token = getCookie('rb_admin_token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      
+      const res = await fetch(`http://68.183.71.165:18100/api/v1/settings/integrations/connection/${integration.id}`, {
+        method: 'GET',
+        headers
+      });
+      
+      if (!res.ok) throw new Error(`Ошибка ${res.status}`);
+      
+      const data = await res.json();
+      const isConnected = data === true || data === 'true' || (typeof data === 'object' && data.connected === true);
+      
+      if (isConnected) {
+        Notify.success('Соединение успешно установлено');
+      } else {
+        Notify.failure('Не удалось установить соединение');
+      }
+    } catch (e) {
+      console.error('Ошибка при проверке соединения:', e);
+      Notify.failure('Ошибка при проверке соединения');
     }
   };
 
@@ -760,20 +793,18 @@ export const IntegrationsPage = () => {
                   <Table theme={theme}>
                     <TableHeader theme={theme}>
                       <TableHeaderRow>
-                        <TableHeaderCell theme={theme}>ID</TableHeaderCell>
                         <TableHeaderCell theme={theme}>Name</TableHeaderCell>
                         <TableHeaderCell theme={theme}>Type</TableHeaderCell>
                         <TableHeaderCell theme={theme}>Available</TableHeaderCell>
                         <TableHeaderCell theme={theme}>Username</TableHeaderCell>
                         <TableHeaderCell theme={theme}>URL</TableHeaderCell>
                         <TableHeaderCell theme={theme}>Secret Key</TableHeaderCell>
-                        <TableHeaderCell theme={theme} $width="132px">Actions</TableHeaderCell>
+                        <TableHeaderCell theme={theme} $width="168px">Actions</TableHeaderCell>
                       </TableHeaderRow>
                     </TableHeader>
                     <TableBody>
                       {integrations.map((integration) => (
                         <TableRow key={integration.id} theme={theme}>
-                          <TableCell theme={theme}>{integration.id}</TableCell>
                           <TableCell theme={theme}>{integration.name || '-'}</TableCell>
                           <TableCell theme={theme}>{integration.type || '-'}</TableCell>
                           <TableCell theme={theme}>
@@ -799,6 +830,13 @@ export const IntegrationsPage = () => {
                               title="Редактировать"
                             >
                               <HiPencil size={16} />
+                            </ActionButton>
+                            <ActionButton
+                              theme={theme}
+                              onClick={(e) => handleCheckConnection(integration, e)}
+                              title="Проверить соединение"
+                            >
+                              <HiSignal size={16} />
                             </ActionButton>
                             <ActionButton
                               theme={theme}

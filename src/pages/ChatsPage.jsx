@@ -5,7 +5,9 @@ import { useTheme } from '../contexts/ThemeContext';
 import { Layout } from '../components/Layout';
 import { Loader } from '../components/Loader';
 import { Pagination } from '../components/Pagination';
-import { HiArrowUp, HiArrowDown, HiEye, HiCheck, HiXMark } from 'react-icons/hi2';
+import { HiEye, HiCheck, HiXMark } from 'react-icons/hi2';
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
+import { DateTimePicker } from '../components/DateTimePicker';
 
 // Функция для получения токена из куки
 const getCookie = (name) => {
@@ -202,23 +204,11 @@ const TableHeaderCell = styled.th`
       theme.colors.primary === '#0D0D0D' ? '#f8f8f8' : 'rgba(255,255,255,0.04)'};
   }
 
-  ${({ $sorted }) =>
-    $sorted &&
-    `
-    color: ${({ theme }) => theme.colors.primary};
-  `}
-
   ${({ $width }) =>
     $width &&
     `
     width: ${$width};
   `}
-`;
-
-const SortIcon = styled.span`
-  margin-left: 8px;
-  font-size: 10px;
-  opacity: 0.6;
 `;
 
 const TableBody = styled.tbody``;
@@ -307,23 +297,88 @@ const ScoreBadge = styled.span`
     !$level && 'background: rgba(128,128,128,0.15); color: #6b7280;'}
 `;
 
-const TagsWrap = styled.div`
-  display: flex;
+
+const FiltersContainer = styled.div`
+  padding: 12px 16px;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  display: ${({ $isVisible }) => ($isVisible ? 'flex' : 'none')};
+  gap: 12px;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 4px;
-  justify-content: center;
+  background-color: ${({ theme }) => theme.colors.background};
 `;
 
-const TagPill = styled.span`
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 6px;
+const FilterButtons = styled.div`
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+`;
+
+const FilterGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 150px;
+`;
+
+const FilterLabelStyled = styled.label`
   font-size: 11px;
   font-weight: 500;
-  background: ${({ theme }) =>
-    theme.colors.primary === '#0D0D0D' ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.1)'};
+  color: ${({ theme }) => theme.colors.secondary};
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+`;
+
+const Input = styled.input`
+  width: 100%;
+  padding: 6px 10px;
   border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 6px;
+  background-color: ${({ theme }) => theme.colors.background};
   color: ${({ theme }) => theme.colors.primary};
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+
+  &:focus {
+    border-color: ${({ theme }) => theme.colors.accent};
+  }
+`;
+
+const Select = styled.select`
+  width: 100%;
+  min-width: 0;
+  padding: 6px 10px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 6px;
+  background-color: ${({ theme }) => theme.colors.background};
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+
+  &:focus {
+    border-color: ${({ theme }) => theme.colors.accent};
+  }
+
+  &::-ms-expand {
+    display: none;
+  }
+
+  option {
+    width: 100%;
+    max-width: 100%;
+  }
 `;
 
 
@@ -334,10 +389,27 @@ export const ChatsPage = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [pagesCount, setPagesCount] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortField, setSortField] = useState('created_chat_at');
-  const [sortDirection, setSortDirection] = useState('desc');
+  const [projects, setProjects] = useState([]);
+  const [filters, setFilters] = useState({
+    user_type: '',
+    chat_color: '',
+    project_id: '',
+    username: '',
+    created_from: '',
+    created_to: '',
+    checked: ''
+  });
+  const [appliedFilters, setAppliedFilters] = useState({
+    user_type: '',
+    chat_color: '',
+    project_id: '',
+    username: '',
+    created_from: '',
+    created_to: '',
+    checked: ''
+  });
   const [currentPage, setCurrentPage] = useState(1);
+  const [isFiltersVisible, setIsFiltersVisible] = useState(false);
 
   const ITEMS_PER_PAGE = 10;
 
@@ -351,7 +423,19 @@ export const ChatsPage = () => {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const url = `http://68.183.71.165:18100/api/v1/chat/reviewedchat/?page=${currentPage}&page_size=${ITEMS_PER_PAGE}`;
+      // Формируем URL с примененными фильтрами
+      const params = new URLSearchParams();
+      params.append('page', currentPage.toString());
+      params.append('page_size', ITEMS_PER_PAGE.toString());
+      if (appliedFilters.user_type) params.append('user_type', appliedFilters.user_type);
+      if (appliedFilters.chat_color) params.append('chat_color', appliedFilters.chat_color);
+      if (appliedFilters.project_id) params.append('project_id', appliedFilters.project_id);
+      if (appliedFilters.username) params.append('username', appliedFilters.username);
+      if (appliedFilters.created_from) params.append('created_from', appliedFilters.created_from);
+      if (appliedFilters.created_to) params.append('created_to', appliedFilters.created_to);
+      if (appliedFilters.checked !== '') params.append('checked', appliedFilters.checked);
+      
+      const url = `http://68.183.71.165:18100/api/v1/chat/reviewedchat/?${params.toString()}`;
       const response = await fetch(url, {
         method: 'GET',
         headers,
@@ -409,76 +493,60 @@ export const ChatsPage = () => {
       setChats([]);
       setTotalCount(0);
       setPagesCount(null);
+      Notify.failure('Ошибка при загрузке чатов');
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage]);
+  }, [currentPage, appliedFilters]);
 
   useEffect(() => {
     fetchChats();
   }, [fetchChats]);
 
-  const filteredChats = chats.filter((chat) => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    const un = (chat.username || []).join(' ').toLowerCase();
-    return (
-      (chat.chat_id || '').toLowerCase().includes(q) ||
-      (chat.thread_id || '').toLowerCase().includes(q) ||
-      (chat.project_title || '').toLowerCase().includes(q) ||
-      un.includes(q) ||
-      (chat.tags || []).some((t) => String(t).toLowerCase().includes(q))
-    );
-  });
-
-  const sortedChats = [...filteredChats].sort((a, b) => {
-    if (!sortField) return 0;
-    let aVal, bVal;
-    switch (sortField) {
-      case 'created_chat_at':
-        aVal = a.created_chat_at || '';
-        bVal = b.created_chat_at || '';
-        break;
-      case 'score':
-        aVal = a.score ?? -1;
-        bVal = b.score ?? -1;
-        break;
-      case 'project_title':
-        aVal = (a.project_title || '').toLowerCase();
-        bVal = (b.project_title || '').toLowerCase();
-        break;
-      case 'chat_id':
-        aVal = (a.chat_id || '').toLowerCase();
-        bVal = (b.chat_id || '').toLowerCase();
-        break;
-      case 'user_type':
-        aVal = (a.user_type || '').toLowerCase();
-        bVal = (b.user_type || '').toLowerCase();
-        break;
-      default:
-        return 0;
-    }
-    if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
-    if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
-    return 0;
-  });
-
-  const handleSort = (field) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
-
-  const getSortIcon = (field) => {
-    if (sortField !== field) return null;
-    return sortDirection === 'asc' ? <HiArrowUp /> : <HiArrowDown />;
-  };
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const token = getCookie('rb_admin_token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        
+        const res = await fetch('http://68.183.71.165:18100/api/v1/settings/project/?skip=0&limit=100', {
+          method: 'GET',
+          headers
+        });
+        
+        if (!res.ok) throw new Error(`Ошибка ${res.status}`);
+        const json = await res.json();
+        setProjects(Array.isArray(json) ? json : []);
+      } catch (e) {
+        console.error('Ошибка при загрузке проектов:', e);
+      }
+    };
+    fetchProjects();
+  }, []);
 
   const handleRefresh = () => {
     fetchChats();
+  };
+
+  const handleApplyFilters = () => {
+    setAppliedFilters({ ...filters });
+    setCurrentPage(1); // Сбрасываем на первую страницу при применении фильтров
+  };
+
+  const handleClearFilters = () => {
+    const defaultFilters = {
+      user_type: '',
+      chat_color: '',
+      project_id: '',
+      username: '',
+      created_from: '',
+      created_to: '',
+      checked: ''
+    };
+    setFilters(defaultFilters);
+    setAppliedFilters(defaultFilters);
+    setCurrentPage(1);
   };
 
   const handleView = (chat, e) => {
@@ -487,7 +555,7 @@ export const ChatsPage = () => {
   };
 
   const totalPages = (pagesCount != null ? pagesCount : Math.ceil(totalCount / ITEMS_PER_PAGE)) || 1;
-  const paginatedChats = sortedChats;
+  const paginatedChats = chats;
 
   if (isLoading) {
     return (
@@ -526,40 +594,104 @@ export const ChatsPage = () => {
               <Button theme={theme} onClick={handleRefresh}>
                 Refresh
               </Button>
+              <Button 
+                theme={theme} 
+                onClick={() => setIsFiltersVisible(!isFiltersVisible)}
+                title={isFiltersVisible ? 'Скрыть фильтры' : 'Показать фильтры'}
+              >
+                Filters
+              </Button>
             </ButtonsGroup>
           </HeaderSection>
 
-          <FiltersSection theme={theme}>
-            <FilterLabel theme={theme}>Поиск:</FilterLabel>
-            <SearchInput
-              theme={theme}
-              type="text"
-              placeholder="chat_id, thread, проект, username, теги..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <FilterLabel theme={theme}>Сортировка:</FilterLabel>
-            <SortSelect
-              theme={theme}
-              value={sortField}
-              onChange={(e) => setSortField(e.target.value)}
-            >
-              <option value="created_chat_at">Дата</option>
-              <option value="score">Оценка</option>
-              <option value="project_title">Проект</option>
-              <option value="chat_id">Chat ID</option>
-              <option value="user_type">Тип</option>
-            </SortSelect>
-            <FilterLabel theme={theme}>Порядок:</FilterLabel>
-            <SortSelect
-              theme={theme}
-              value={sortDirection}
-              onChange={(e) => setSortDirection(e.target.value)}
-            >
-              <option value="desc">↓</option>
-              <option value="asc">↑</option>
-            </SortSelect>
-          </FiltersSection>
+          <FiltersContainer theme={theme} $isVisible={isFiltersVisible}>
+            <FilterGroup>
+              <FilterLabelStyled theme={theme}>User Type</FilterLabelStyled>
+              <Select
+                theme={theme}
+                value={filters.user_type}
+                onChange={(e) => setFilters(prev => ({ ...prev, user_type: e.target.value }))}
+              >
+                <option value="">Все</option>
+                <option value="other">Other</option>
+                <option value="vip">VIP</option>
+              </Select>
+            </FilterGroup>
+            <FilterGroup>
+              <FilterLabelStyled theme={theme}>Chat Color</FilterLabelStyled>
+              <Select
+                theme={theme}
+                value={filters.chat_color}
+                onChange={(e) => setFilters(prev => ({ ...prev, chat_color: e.target.value }))}
+              >
+                <option value="">Все</option>
+                <option value="red">Red</option>
+                <option value="yellow">Yellow</option>
+                <option value="green">Green</option>
+              </Select>
+            </FilterGroup>
+            <FilterGroup>
+              <FilterLabelStyled theme={theme}>Project ID</FilterLabelStyled>
+              <Select
+                theme={theme}
+                value={filters.project_id}
+                onChange={(e) => setFilters(prev => ({ ...prev, project_id: e.target.value }))}
+              >
+                <option value="">Все проекты</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.title || project.id}
+                  </option>
+                ))}
+              </Select>
+            </FilterGroup>
+            <FilterGroup>
+              <FilterLabelStyled theme={theme}>Username</FilterLabelStyled>
+              <Input
+                theme={theme}
+                type="text"
+                placeholder="Введите username"
+                value={filters.username}
+                onChange={(e) => setFilters(prev => ({ ...prev, username: e.target.value }))}
+              />
+            </FilterGroup>
+            <FilterGroup>
+              <FilterLabelStyled theme={theme}>Created From</FilterLabelStyled>
+              <DateTimePicker
+                value={filters.created_from}
+                onChange={(e) => setFilters(prev => ({ ...prev, created_from: e.target.value }))}
+                placeholder="Выберите дату начала"
+              />
+            </FilterGroup>
+            <FilterGroup>
+              <FilterLabelStyled theme={theme}>Created To</FilterLabelStyled>
+              <DateTimePicker
+                value={filters.created_to}
+                onChange={(e) => setFilters(prev => ({ ...prev, created_to: e.target.value }))}
+                placeholder="Выберите дату окончания"
+              />
+            </FilterGroup>
+            <FilterGroup>
+              <FilterLabelStyled theme={theme}>Checked</FilterLabelStyled>
+              <Select
+                theme={theme}
+                value={filters.checked}
+                onChange={(e) => setFilters(prev => ({ ...prev, checked: e.target.value }))}
+              >
+                <option value="">Все</option>
+                <option value="true">Checked</option>
+                <option value="false">Not Checked</option>
+              </Select>
+            </FilterGroup>
+            <FilterButtons>
+              <Button theme={theme} onClick={handleApplyFilters}>
+                Применить
+              </Button>
+              <Button theme={theme} onClick={handleClearFilters}>
+                Очистить
+              </Button>
+            </FilterButtons>
+          </FiltersContainer>
 
           <PageContainer>
             <LeftPanel $isFullWidth>
@@ -567,26 +699,15 @@ export const ChatsPage = () => {
                 <Table theme={theme}>
                   <TableHeader theme={theme}>
                     <TableHeaderRow>
-                      <TableHeaderCell theme={theme} onClick={() => handleSort('chat_id')} $sorted={sortField === 'chat_id'}>
-                        Chat ID <SortIcon>{getSortIcon('chat_id')}</SortIcon>
-                      </TableHeaderCell>
+                      <TableHeaderCell theme={theme}>Chat ID</TableHeaderCell>
                       <TableHeaderCell theme={theme}>Thread ID</TableHeaderCell>
-                      <TableHeaderCell theme={theme} onClick={() => handleSort('user_type')} $sorted={sortField === 'user_type'}>
-                        Тип <SortIcon>{getSortIcon('user_type')}</SortIcon>
-                      </TableHeaderCell>
+                      <TableHeaderCell theme={theme}>Тип</TableHeaderCell>
                       <TableHeaderCell theme={theme} $width="56px" title="Проверен">checked</TableHeaderCell>
-                      <TableHeaderCell theme={theme} onClick={() => handleSort('score')} $sorted={sortField === 'score'}>
-                        Оценка <SortIcon>{getSortIcon('score')}</SortIcon>
-                      </TableHeaderCell>
-                      <TableHeaderCell theme={theme} onClick={() => handleSort('created_chat_at')} $sorted={sortField === 'created_chat_at'}>
-                        Дата <SortIcon>{getSortIcon('created_chat_at')}</SortIcon>
-                      </TableHeaderCell>
+                      <TableHeaderCell theme={theme}>Оценка</TableHeaderCell>
+                      <TableHeaderCell theme={theme}>Дата</TableHeaderCell>
                       <TableHeaderCell theme={theme}>Длит.</TableHeaderCell>
-                      <TableHeaderCell theme={theme} onClick={() => handleSort('project_title')} $sorted={sortField === 'project_title'}>
-                        Проект <SortIcon>{getSortIcon('project_title')}</SortIcon>
-                      </TableHeaderCell>
+                      <TableHeaderCell theme={theme}>Проект</TableHeaderCell>
                       <TableHeaderCell theme={theme}>Username</TableHeaderCell>
-                      <TableHeaderCell theme={theme}>Теги</TableHeaderCell>
                       <TableHeaderCell theme={theme} $width="44px"> </TableHeaderCell>
                     </TableHeaderRow>
                   </TableHeader>
@@ -616,13 +737,6 @@ export const ChatsPage = () => {
                           <TableCell theme={theme}>{chat.chat_duration || '—'}</TableCell>
                           <PaymentCell theme={theme}>{chat.project_title || '—'}</PaymentCell>
                           <PaymentCell theme={theme}>{(chat.username || []).join(', ') || '—'}</PaymentCell>
-                          <TableCell theme={theme}>
-                            <TagsWrap>
-                              {(chat.tags || []).map((t, i) => (
-                                <TagPill key={i} theme={theme}>{String(t)}</TagPill>
-                              ))}
-                            </TagsWrap>
-                          </TableCell>
                           <ActionsCell theme={theme}>
                             <ActionButton theme={theme} onClick={(e) => handleView(chat, e)} title="Открыть">
                               <HiEye size={16} />

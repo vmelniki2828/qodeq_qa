@@ -5,6 +5,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { Layout } from '../components/Layout';
 import { Loader } from '../components/Loader';
 import { HiCheck, HiXMark, HiEye, HiPencil } from 'react-icons/hi2';
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
 const getCookie = (name) => {
   const value = `; ${document.cookie}`;
@@ -339,12 +340,12 @@ const EmptyState = styled.div`
 
 const Input = styled.input`
   width: 100%;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 8px;
+  border-radius: 6px;
   background-color: ${({ theme }) => theme.colors.background};
   color: ${({ theme }) => theme.colors.primary};
-  font-size: 14px;
+  font-size: 13px;
   font-family: inherit;
   outline: none;
   transition: border-color 0.15s ease;
@@ -358,22 +359,22 @@ const Input = styled.input`
 const Select = styled.select`
   width: 100%;
   min-width: 0;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 8px;
+  border-radius: 6px;
   background-color: ${({ theme }) => theme.colors.background};
   color: ${({ theme }) => theme.colors.primary};
-  font-size: 14px;
+  font-size: 13px;
   font-family: inherit;
   outline: none;
   transition: border-color 0.15s ease;
   box-sizing: border-box;
   cursor: pointer;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 36px;
+  background-position: right 10px center;
+  padding-right: 32px;
 
   &:focus {
     border-color: ${({ theme }) => theme.colors.accent};
@@ -390,10 +391,10 @@ const Select = styled.select`
 `;
 
 const FiltersContainer = styled.div`
-  padding: 16px 20px;
+  padding: 12px 16px;
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
   display: ${({ $isVisible }) => ($isVisible ? 'flex' : 'none')};
-  gap: 16px;
+  gap: 12px;
   align-items: center;
   flex-wrap: wrap;
   background-color: ${({ theme }) => theme.colors.background};
@@ -409,11 +410,11 @@ const FilterGroup = styled.div`
   display: flex;
   flex-direction: column;
   gap: 4px;
-  min-width: 200px;
+  min-width: 150px;
 `;
 
 const FilterLabel = styled.label`
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   color: ${({ theme }) => theme.colors.secondary};
   text-transform: uppercase;
@@ -511,6 +512,7 @@ export const AgentsPage = () => {
       } catch (e) {
         setError(e.message);
         setAgents([]);
+        // Не показываем уведомление при начальной загрузке, только при явных действиях
       } finally {
         setLoading(false);
       }
@@ -585,6 +587,7 @@ export const AgentsPage = () => {
       } catch (e) {
         setError(e.message);
         setAgents([]);
+        Notify.failure('Ошибка при обновлении списка агентов');
       } finally {
         setLoading(false);
       }
@@ -651,17 +654,17 @@ export const AgentsPage = () => {
 
   const handleSaveCreate = async () => {
     if (!createForm.name || !createForm.name.trim()) {
-      alert('Пожалуйста, заполните поле Name');
+      Notify.failure('Пожалуйста, заполните поле Name');
       return;
     }
 
     if (!createForm.lcid || !createForm.lcid.trim()) {
-      alert('Пожалуйста, заполните поле LCID');
+      Notify.failure('Пожалуйста, заполните поле LCID');
       return;
     }
 
     if (!createForm.integration_id) {
-      alert('Пожалуйста, выберите Integration ID');
+      Notify.failure('Пожалуйста, выберите Integration ID');
       return;
     }
 
@@ -689,25 +692,26 @@ export const AgentsPage = () => {
       // Обновляем список агентов
       handleRefresh();
       handleCloseCreate();
+      Notify.success('Агент успешно создан');
     } catch (e) {
       console.error('Ошибка при создании агента:', e);
-      alert('Ошибка при создании агента');
+      Notify.failure('Ошибка при создании агента');
     }
   };
 
   const handleSaveEdit = async () => {
     if (!createForm.name || !createForm.name.trim()) {
-      alert('Пожалуйста, заполните поле Name');
+      Notify.failure('Пожалуйста, заполните поле Name');
       return;
     }
 
     if (!createForm.lcid || !createForm.lcid.trim()) {
-      alert('Пожалуйста, заполните поле LCID');
+      Notify.failure('Пожалуйста, заполните поле LCID');
       return;
     }
 
     if (!editingAgent || !editingAgent.id) {
-      alert('Ошибка: агент не найден');
+      Notify.failure('Ошибка: агент не найден');
       return;
     }
 
@@ -734,8 +738,9 @@ export const AgentsPage = () => {
       // Обновляем список агентов
       handleCloseCreate();
       handleRefresh();
+      Notify.success('Агент успешно обновлен');
     } catch (e) {
-      alert(`Ошибка при сохранении: ${e.message}`);
+      Notify.failure(`Ошибка при сохранении: ${e.message}`);
     }
   };
 
@@ -768,7 +773,11 @@ export const AgentsPage = () => {
     if (agents.length === 0) return ['Actions'];
     const allKeys = new Set();
     agents.forEach(agent => {
-      Object.keys(agent).forEach(key => allKeys.add(key));
+      Object.keys(agent).forEach(key => {
+        if (key !== 'id') {
+          allKeys.add(key);
+        }
+      });
     });
     const sortedKeys = Array.from(allKeys).sort();
     return [...sortedKeys, 'Actions'];

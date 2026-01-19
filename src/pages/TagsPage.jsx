@@ -3,7 +3,8 @@ import styled, { ThemeProvider } from 'styled-components';
 import { useTheme } from '../contexts/ThemeContext';
 import { Layout } from '../components/Layout';
 import { Loader } from '../components/Loader';
-import { HiChevronUp, HiChevronDown, HiCheck, HiXMark } from 'react-icons/hi2';
+import { HiChevronUp, HiChevronDown, HiCheck, HiXMark, HiPlus, HiMinus } from 'react-icons/hi2';
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
 const getCookie = (name) => {
   const value = `; ${document.cookie}`;
@@ -171,6 +172,88 @@ const TagValue = styled.span`
   color: ${({ theme }) => theme.colors.primary};
 `;
 
+const PenaltyEditor = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+`;
+
+const PenaltyInput = styled.input`
+  width: 60px;
+  padding: 4px 8px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 4px;
+  background-color: ${({ theme }) => theme.colors.background};
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 13px;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.15s ease;
+
+  &:focus {
+    border-color: ${({ theme }) => theme.colors.accent};
+  }
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  &[type=number] {
+    -moz-appearance: textfield;
+  }
+`;
+
+const PenaltyButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 4px;
+  background-color: ${({ theme }) => theme.colors.background};
+  color: ${({ theme }) => theme.colors.primary};
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background-color: ${({ theme }) =>
+      theme.colors.primary === '#0D0D0D' ? '#f0f0f0' : 'rgba(255,255,255,0.08)'};
+    border-color: ${({ theme }) => theme.colors.accent};
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
+const SaveButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background-color: ${({ theme }) => theme.colors.accent};
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    opacity: 0.9;
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
 const ErrorBlock = styled.div`
   padding: 20px;
   background: rgba(239, 68, 68, 0.08);
@@ -193,6 +276,7 @@ export const TagsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedQuestions, setExpandedQuestions] = useState(new Set());
+  const [editingPenalties, setEditingPenalties] = useState({});
 
   useEffect(() => {
     const fetchTags = async () => {
@@ -214,6 +298,7 @@ export const TagsPage = () => {
       } catch (e) {
         setError(e.message);
         setTags([]);
+        // Не показываем уведомление при начальной загрузке, только при явных действиях
       } finally {
         setLoading(false);
       }
@@ -241,6 +326,7 @@ export const TagsPage = () => {
       } catch (e) {
         setError(e.message);
         setTags([]);
+        Notify.failure('Ошибка при обновлении списка тегов');
       } finally {
         setLoading(false);
       }
@@ -258,6 +344,68 @@ export const TagsPage = () => {
       }
       return newSet;
     });
+  };
+
+  const handlePenaltyChange = (tagId, value) => {
+    const numValue = parseInt(value) || 0;
+    setEditingPenalties(prev => ({
+      ...prev,
+      [tagId]: numValue
+    }));
+  };
+
+  const handlePenaltyIncrement = (tagId, currentValue) => {
+    const newValue = (currentValue || 0) + 1;
+    handlePenaltyChange(tagId, newValue);
+  };
+
+  const handlePenaltyDecrement = (tagId, currentValue) => {
+    const newValue = Math.max(0, (currentValue || 0) - 1);
+    handlePenaltyChange(tagId, newValue);
+  };
+
+  const handleSavePenalty = async (tagId) => {
+    const newPenalty = editingPenalties[tagId];
+    if (newPenalty === undefined) return;
+
+    try {
+      const token = getCookie('rb_admin_token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      
+      const res = await fetch(`http://68.183.71.165:18100/api/v1/settings/tags/${tagId}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ penalty: newPenalty })
+      });
+      
+      if (!res.ok) throw new Error(`Ошибка ${res.status}`);
+      
+      // Обновляем локальное состояние
+      setTags(prev => prev.map(item => {
+        const updatedTags = { ...item.tags };
+        if (updatedTags && Object.keys(updatedTags).length > 0) {
+          Object.keys(updatedTags).forEach(key => {
+            if (updatedTags[key].id === tagId) {
+              updatedTags[key] = { ...updatedTags[key], penalty: newPenalty };
+            }
+          });
+        }
+        return { ...item, tags: updatedTags };
+      }));
+      
+      // Убираем из редактируемых
+      setEditingPenalties(prev => {
+        const newState = { ...prev };
+        delete newState[tagId];
+        return newState;
+      });
+      
+      Notify.success('Penalty успешно обновлен');
+    } catch (e) {
+      console.error('Ошибка при сохранении penalty:', e);
+      Notify.failure('Ошибка при сохранении penalty');
+    }
   };
 
   if (loading) {
@@ -332,11 +480,38 @@ export const TagsPage = () => {
                                 </TagField>
                                 <TagField $position="center" theme={theme}>
                                   <TagLabel theme={theme}>Penalty:</TagLabel>
-                                  <TagValue theme={theme}>
-                                    {tag.penalty !== null && tag.penalty !== undefined
-                                      ? String(tag.penalty)
-                                      : '—'}
-                                  </TagValue>
+                                  <PenaltyEditor>
+                                    <PenaltyButton
+                                      theme={theme}
+                                      onClick={() => handlePenaltyDecrement(tag.id, editingPenalties[tag.id] !== undefined ? editingPenalties[tag.id] : tag.penalty)}
+                                      title="Уменьшить"
+                                    >
+                                      <HiMinus size={14} />
+                                    </PenaltyButton>
+                                    <PenaltyInput
+                                      theme={theme}
+                                      type="number"
+                                      min="0"
+                                      value={editingPenalties[tag.id] !== undefined ? editingPenalties[tag.id] : (tag.penalty !== null && tag.penalty !== undefined ? tag.penalty : 0)}
+                                      onChange={(e) => handlePenaltyChange(tag.id, e.target.value)}
+                                    />
+                                    <PenaltyButton
+                                      theme={theme}
+                                      onClick={() => handlePenaltyIncrement(tag.id, editingPenalties[tag.id] !== undefined ? editingPenalties[tag.id] : tag.penalty)}
+                                      title="Увеличить"
+                                    >
+                                      <HiPlus size={14} />
+                                    </PenaltyButton>
+                                    {editingPenalties[tag.id] !== undefined && editingPenalties[tag.id] !== tag.penalty && (
+                                      <SaveButton
+                                        theme={theme}
+                                        onClick={() => handleSavePenalty(tag.id)}
+                                        title="Сохранить"
+                                      >
+                                        <HiCheck size={14} />
+                                      </SaveButton>
+                                    )}
+                                  </PenaltyEditor>
                                 </TagField>
                                 <TagField $position="right" theme={theme}>
                                   <TagLabel theme={theme}>Active:</TagLabel>

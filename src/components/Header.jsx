@@ -31,7 +31,7 @@ export const Header = () => {
   return (
     <HeaderStyled theme={theme}>
       <HeaderSection>
-        <Title theme={theme}>Qodeq Payment</Title>
+        <Title theme={theme}>Qodeq Qa</Title>
       </HeaderSection>
 
       <HeaderSection>

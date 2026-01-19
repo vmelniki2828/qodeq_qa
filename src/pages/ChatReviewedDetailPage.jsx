@@ -5,6 +5,7 @@ import { Layout } from '../components/Layout';
 import { useTheme } from '../contexts/ThemeContext';
 import { Loader } from '../components/Loader';
 import { HiArrowLeft, HiCheck, HiXMark, HiHashtag, HiChatBubbleLeftRight, HiUser, HiClock, HiTag, HiCube, HiChevronDown, HiChevronUp } from 'react-icons/hi2';
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
 const getCookie = (name) => {
   const value = `; ${document.cookie}`;
@@ -369,11 +370,17 @@ const MessagesList = styled.div`
 `;
 
 const MessageCard = styled.div`
-  padding: 12px 14px;
-  background: ${({ theme }) => theme.colors.background};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 8px;
-  border-left: 3px solid ${({ $isPrivate, theme }) => $isPrivate ? '#dc2626' : theme.colors.accent};
+  padding: ${({ $isSystem }) => $isSystem ? '8px 0' : '12px 14px'};
+  background: ${({ theme, $isPrivate, $isSystem }) => {
+    if ($isSystem) return 'transparent';
+    return $isPrivate ? 'rgba(254, 243, 199, 0.3)' : theme.colors.background;
+  }};
+  border: ${({ $isSystem }) => $isSystem ? 'none' : `1px solid ${({ theme }) => theme.colors.border}`};
+  border-radius: ${({ $isSystem }) => $isSystem ? '0' : '8px'};
+  border-left: ${({ $isPrivate, $isSystem, theme }) => {
+    if ($isSystem) return 'none';
+    return $isPrivate ? '3px solid #fde68a' : `3px solid ${theme.colors.accent}`;
+  }};
   max-width: ${({ $align }) => $align === 'center' ? '80%' : '70%'};
   align-self: ${({ $align }) => {
     if ($align === 'right') return 'flex-end';
@@ -415,10 +422,12 @@ const MessageTime = styled.span`
 `;
 
 const MessageText = styled.div`
-  font-size: 14px;
-  color: ${({ theme }) => theme.colors.primary};
+  font-size: ${({ $isSystem }) => $isSystem ? '13px' : '14px'};
+  color: ${({ theme, $isSystem }) => $isSystem ? '#9ca3af' : theme.colors.primary};
   line-height: 1.5;
   word-break: break-word;
+  text-align: ${({ $isSystem }) => $isSystem ? 'center' : 'left'};
+  font-style: ${({ $isSystem }) => $isSystem ? 'italic' : 'normal'};
 `;
 
 const ResultsList = styled.div`
@@ -633,6 +642,7 @@ export const ChatReviewedDetailPage = () => {
         setTagsSettings(json);
       } catch (e) {
         console.error('Ошибка при загрузке настроек тегов:', e);
+        Notify.failure('Ошибка при загрузке настроек тегов');
       }
     };
     fetchTagsSettings();
@@ -864,26 +874,29 @@ export const ChatReviewedDetailPage = () => {
                     <MessagesList theme={theme}>
                       {messages.map((msg, idx) => {
                         const authorType = msg.author?.type;
+                        const isSystem = !msg.author || authorType === 'system';
                         let align = 'left';
-                        if (!msg.author || authorType === 'system') {
+                        if (isSystem) {
                           align = 'center';
                         } else if (authorType === 'agent') {
                           align = 'right';
                         }
                         return (
-                          <MessageCard key={idx} theme={theme} $isPrivate={msg.is_private} $align={align}>
-                            <MessageHeader>
-                              <MessageAuthor>
-                                {msg.author && (
-                                  <>
-                                    <AuthorName theme={theme}>{msg.author.name || '—'}</AuthorName>
-                                    {authorType && <AuthorInfo theme={theme}>• {authorType}</AuthorInfo>}
-                                  </>
-                                )}
-                              </MessageAuthor>
-                              <MessageTime theme={theme}>{formatDate(msg.created_at)}</MessageTime>
-                            </MessageHeader>
-                            <MessageText theme={theme}>{renderTextWithLinks(msg.text, theme)}</MessageText>
+                          <MessageCard key={idx} theme={theme} $isPrivate={msg.is_private} $isSystem={isSystem} $align={align}>
+                            {!isSystem && (
+                              <MessageHeader>
+                                <MessageAuthor>
+                                  {msg.author && (
+                                    <>
+                                      <AuthorName theme={theme}>{msg.author.name || '—'}</AuthorName>
+                                      {authorType && <AuthorInfo theme={theme}>• {authorType}</AuthorInfo>}
+                                    </>
+                                  )}
+                                </MessageAuthor>
+                                <MessageTime theme={theme}>{formatDate(msg.created_at)}</MessageTime>
+                              </MessageHeader>
+                            )}
+                            <MessageText theme={theme} $isSystem={isSystem}>{renderTextWithLinks(msg.text, theme)}</MessageText>
                           </MessageCard>
                         );
                       })}

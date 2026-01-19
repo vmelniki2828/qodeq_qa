@@ -4,6 +4,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { Layout } from '../components/Layout';
 import { Loader } from '../components/Loader';
 import { HiCheck, HiXMark, HiArrowUp, HiArrowDown, HiPencil, HiTrash } from 'react-icons/hi2';
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
 const getCookie = (name) => {
   const value = `; ${document.cookie}`;
@@ -519,6 +520,7 @@ export const ProjectsPage = () => {
       } catch (e) {
         setError(e.message);
         setProjects([]);
+        // Не показываем уведомление при начальной загрузке, только при явных действиях
       } finally {
         setLoading(false);
       }
@@ -652,6 +654,7 @@ export const ProjectsPage = () => {
       } catch (e) {
         setError(e.message);
         setProjects([]);
+        Notify.failure('Ошибка при обновлении списка проектов');
       } finally {
         setLoading(false);
       }
@@ -739,9 +742,10 @@ export const ProjectsPage = () => {
       // Обновляем список проектов
       handleRefresh();
       handleCloseEdit();
+      Notify.success('Проект успешно обновлен');
     } catch (e) {
       console.error('Ошибка при сохранении проекта:', e);
-      alert('Ошибка при сохранении проекта');
+      Notify.failure('Ошибка при сохранении проекта');
     }
   };
 
@@ -766,9 +770,10 @@ export const ProjectsPage = () => {
       
       // Обновляем список проектов
       handleRefresh();
+      Notify.success('Проект успешно удален');
     } catch (e) {
       console.error('Ошибка при удалении проекта:', e);
-      alert('Ошибка при удалении проекта');
+      Notify.failure('Ошибка при удалении проекта');
     }
   };
 
@@ -797,9 +802,10 @@ export const ProjectsPage = () => {
       // Обновляем список проектов
       handleRefresh();
       handleCloseEdit();
+      Notify.success('Проект успешно создан');
     } catch (e) {
       console.error('Ошибка при создании проекта:', e);
-      alert('Ошибка при создании проекта');
+      Notify.failure('Ошибка при создании проекта');
     }
   };
 

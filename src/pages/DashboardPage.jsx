@@ -5,6 +5,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { HiArrowUp, HiArrowDown } from 'react-icons/hi2';
 import { Loader } from '../components/Loader';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend as RechartsLegend, LineChart, Line } from 'recharts';
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
 // Функция для получения токена из куки
 const getCookie = (name) => {
@@ -575,6 +576,7 @@ export const DashboardPage = () => {
       } catch (err) {
         console.error('Ошибка при загрузке статистики:', err);
         setError(err.message);
+        Notify.failure('Ошибка при загрузке статистики');
       } finally {
         setIsLoading(false);
       }
@@ -626,6 +628,7 @@ export const DashboardPage = () => {
     } catch (err) {
       console.error('Ошибка при загрузке статистики поддержки:', err);
       setSupportData(null);
+      Notify.failure('Ошибка при загрузке статистики поддержки');
     } finally {
       setIsLoadingSupport(false);
     }

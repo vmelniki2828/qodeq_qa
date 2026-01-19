@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { useTheme } from '../contexts/ThemeContext';
-import { HiArrowLeft, HiArrowRight, HiArrowUp, HiArrowDown } from 'react-icons/hi2';
+import { HiArrowUp, HiArrowDown } from 'react-icons/hi2';
 import { Loader } from '../components/Loader';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend as RechartsLegend, LineChart, Line } from 'recharts';
 
@@ -119,12 +119,6 @@ const ContentWrapper = styled.div`
   }
 `;
 
-const FiltersContainer = styled.div`
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  flex-shrink: 0;
-`;
 
 
 const StatsCardsContainer = styled.div`
@@ -423,12 +417,6 @@ const TableRow = styled.tr`
   }
 `;
 
-const TableCell = styled.td`
-  padding: 14px 16px;
-  font-size: 13px;
-  color: ${({ theme }) => theme.colors.primary};
-`;
-
 // Стили для таблицы Recent Errors с выравниванием по центру
 const ErrorsTableHeaderCell = styled.th`
   padding: 14px 16px;
@@ -539,11 +527,10 @@ function renderDashboardData(data, theme) {
 
 export const DashboardPage = () => {
   const { theme, isDark } = useTheme();
-  const navigate = useNavigate();
   
   // Цвет обводки для графиков: белый на светлой теме, темный на темной
   const chartStrokeColor = isDark ? '#2D2D2D' : '#FFFFFF';
-  const [activeView, setActiveView] = useState(null);
+  const [activeView] = useState(null);
   const [startDate] = useState('');
   const [endDate] = useState('');
   const [statsData, setStatsData] = useState(null);

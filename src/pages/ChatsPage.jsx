@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled, { ThemeProvider } from 'styled-components';
 import { useTheme } from '../contexts/ThemeContext';
@@ -158,188 +158,6 @@ const LeftPanel = styled.div`
   transition: width 0.3s ease;
 `;
 
-const Divider = styled.div`
-  width: ${({ $isHidden }) => ($isHidden ? '0' : '1px')};
-  background-color: ${({ theme }) => theme.colors.border};
-  flex-shrink: 0;
-  position: relative;
-  opacity: ${({ $isHidden }) => ($isHidden ? 0 : 1)};
-  pointer-events: ${({ $isHidden }) => ($isHidden ? 'none' : 'auto')};
-  overflow: hidden;
-  transition: opacity 0.3s ease, width 0.3s ease;
-`;
-
-const RightPanel = styled.div`
-  width: ${({ $isVisible }) => ($isVisible ? '25%' : '0')};
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  position: relative;
-  opacity: ${({ $isVisible }) => ($isVisible ? 1 : 0)};
-  pointer-events: ${({ $isVisible }) => ($isVisible ? 'auto' : 'none')};
-  transition: opacity 0.3s ease, width 0.3s ease;
-`;
-
-const RightContent = styled.div`
-  padding: 20px;
-  overflow-y: auto;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-
-  &::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: ${({ theme }) => theme.colors.background};
-    border-radius: 4px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: ${({ theme }) => theme.colors.border};
-    border-radius: 4px;
-
-    &:hover {
-      background: ${({ theme }) => theme.colors.secondary};
-    }
-  }
-`;
-
-const BackButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 6px;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  background-color: ${({ theme }) => theme.colors.background};
-  color: ${({ theme }) => theme.colors.primary};
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  align-self: flex-start;
-  margin-bottom: 20px;
-
-  &:hover {
-    background-color: ${({ theme }) =>
-      theme.colors.primary === '#0D0D0D' ? '#f0f0f0' : 'rgba(255,255,255,0.08)'};
-  }
-`;
-
-const SettingSection = styled.div`
-  display: flex;
-  gap: 24px;
-  margin-bottom: 24px;
-`;
-
-const SettingLabel = styled.div`
-  font-size: 14px;
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.primary};
-  width: 180px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-const SettingContent = styled.div`
-  flex: 1;
-  min-width: 0;
-`;
-
-const TextInput = styled.input`
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 8px;
-  background-color: ${({ theme }) => theme.colors.background};
-  color: ${({ theme }) => theme.colors.primary};
-  font-size: 13px;
-  font-family: inherit;
-  outline: none;
-  transition: border-color 0.15s ease;
-  box-sizing: border-box;
-
-  &:focus {
-    border-color: ${({ theme }) => theme.colors.primary};
-  }
-`;
-
-const TextArea = styled.textarea`
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 8px;
-  background-color: ${({ theme }) => theme.colors.background};
-  color: ${({ theme }) => theme.colors.primary};
-  font-size: 13px;
-  font-family: inherit;
-  outline: none;
-  transition: border-color 0.15s ease;
-  box-sizing: border-box;
-  resize: none;
-  min-height: 80px;
-
-  &:focus {
-    border-color: ${({ theme }) => theme.colors.primary};
-  }
-`;
-
-const Select = styled.select`
-  width: 100%;
-  padding: 8px 32px 8px 12px;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 8px;
-  background-color: ${({ theme }) => theme.colors.background};
-  color: ${({ theme }) => theme.colors.primary};
-  font-size: 13px;
-  cursor: pointer;
-  outline: none;
-  transition: border-color 0.15s ease;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236B6B6B' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 16px center;
-  background-size: 12px;
-  box-sizing: border-box;
-
-  &:focus {
-    border-color: ${({ theme }) => theme.colors.primary};
-  }
-
-  option {
-    background-color: ${({ theme }) => theme.colors.background};
-    color: ${({ theme }) => theme.colors.primary};
-  }
-`;
-
-const SaveButton = styled.button`
-  align-self: flex-end;
-  padding: 10px 20px;
-  border-radius: 8px;
-  border: none;
-  background-color: ${({ theme }) => theme.colors.primary};
-  color: ${({ theme }) => theme.colors.background};
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-
-  &:hover {
-    opacity: 0.9;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-`;
 
 const TableContainer = styled.div`
   flex: 1;
@@ -433,20 +251,6 @@ const ChatIdCell = styled(TableCell)`
   font-size: 11px;
 `;
 
-const OperatorsCell = styled(TableCell)`
-  text-align: left;
-  font-family: monospace;
-  font-size: 11px;
-`;
-
-const TemplateCell = styled(TableCell)`
-  text-align: left;
-  font-size: 12px;
-`;
-
-const CreatedAtCell = styled(TableCell)`
-  font-size: 12px;
-`;
 
 const ActionsCell = styled(TableCell)`
   width: 44px;
@@ -538,7 +342,7 @@ export const ChatsPage = () => {
   const ITEMS_PER_PAGE = 10;
 
   // Загрузка данных из API
-  const fetchChats = async () => {
+  const fetchChats = useCallback(async () => {
     setIsLoading(true);
     try {
       const token = getCookie('rb_admin_token');
@@ -608,11 +412,11 @@ export const ChatsPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentPage]);
 
   useEffect(() => {
     fetchChats();
-  }, [currentPage]);
+  }, [fetchChats]);
 
   const filteredChats = chats.filter((chat) => {
     if (!searchQuery) return true;

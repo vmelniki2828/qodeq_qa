@@ -3,7 +3,7 @@ import styled, { ThemeProvider } from 'styled-components';
 import { useTheme } from '../contexts/ThemeContext';
 import { Layout } from '../components/Layout';
 import { Loader } from '../components/Loader';
-import { HiCheck, HiXMark, HiArrowUp, HiArrowDown, HiPencil, HiTrash, HiChevronDown, HiChevronUp } from 'react-icons/hi2';
+import { HiCheck, HiXMark, HiArrowUp, HiArrowDown, HiPencil, HiTrash } from 'react-icons/hi2';
 
 const getCookie = (name) => {
   const value = `; ${document.cookie}`;

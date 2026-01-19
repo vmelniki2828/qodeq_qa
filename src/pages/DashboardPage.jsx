@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { useTheme } from '../contexts/ThemeContext';
 import { HiArrowLeft, HiArrowRight, HiArrowUp, HiArrowDown } from 'react-icons/hi2';
-import { DatePicker } from '../components/DatePicker';
 import { Loader } from '../components/Loader';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend as RechartsLegend, LineChart, Line } from 'recharts';
 
@@ -127,15 +126,6 @@ const FiltersContainer = styled.div`
   flex-shrink: 0;
 `;
 
-const DateSeparator = styled.span`
-  color: ${({ theme }) => theme.colors.secondary};
-  font-size: 14px;
-  padding: 0 8px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  height: 100%;
-`;
 
 const StatsCardsContainer = styled.div`
   display: flex;
@@ -243,29 +233,6 @@ const SectionContent = styled.div`
   padding: 20px;
 `;
 
-const KeyValueGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 12px 24px;
-`;
-
-const KeyValueRow = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-`;
-
-const KeyValueLabel = styled.span`
-  font-size: 12px;
-  color: ${({ theme }) => theme.colors.secondary};
-`;
-
-const KeyValueVal = styled.span`
-  font-size: 15px;
-  font-weight: 500;
-  color: ${({ theme }) => theme.colors.primary};
-  word-break: break-word;
-`;
 
 const DataTableWrap = styled.div`
   overflow-x: auto;
@@ -354,51 +321,6 @@ const ErrorBlock = styled.div`
   border-radius: 12px;
 `;
 
-const ActionButtonsContainer = styled.div`
-  display: flex;
-  flex-direction: row;
-  gap: 8px;
-`;
-
-const ActionButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 14px;
-  padding: 6px 12px;
-  border-radius: 6px;
-  border: 1px solid ${({ theme }) => theme.colors.accent};
-  background-color: ${({ theme }) => theme.colors.accent};
-  color: #FFFFFF;
-  font-family: Arial, sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  white-space: nowrap;
-  box-sizing: border-box;
-  line-height: 1;
-
-  &:hover {
-    background-color: ${({ theme }) => theme.colors.accentHover || theme.colors.accent};
-    opacity: 0.9;
-  }
-`;
-
-const ButtonText = styled.span`
-  display: flex;
-  align-items: center;
-`;
-
-const BackIcon = styled(HiArrowLeft)`
-  margin-right: 6px;
-  font-size: 14px;
-`;
-
-const ArrowIcon = styled(HiArrowRight)`
-  margin-left: 6px;
-  font-size: 14px;
-`;
 
 const ChartsGrid = styled.div`
   display: grid;
@@ -432,67 +354,6 @@ const ChartTitle = styled.h3`
   letter-spacing: 1px;
 `;
 
-const DonutChart = styled.div`
-  position: relative;
-  width: 200px;
-  height: 200px;
-  margin: 0 auto;
-`;
-
-const DonutSvg = styled.svg`
-  transform: rotate(-90deg);
-`;
-
-const DonutSegment = styled.circle`
-  fill: none;
-  stroke-width: 20;
-  transition: all 0.3s ease;
-`;
-
-const DonutLabel = styled.div`
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-`;
-
-const DonutValue = styled.div`
-  font-size: 24px;
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.primary};
-`;
-
-const DonutText = styled.div`
-  font-size: 12px;
-  color: ${({ theme }) => theme.colors.secondary};
-`;
-
-const ChartLegend = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 16px;
-  justify-content: center;
-`;
-
-const LegendItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-`;
-
-const LegendColor = styled.div`
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
-  background-color: ${({ $color }) => $color};
-`;
-
-const LegendLabel = styled.span`
-  color: ${({ theme }) => theme.colors.secondary};
-`;
 
 // Обертка для графиков с глобальными стилями hover
 const ChartsWrapper = styled.div`
@@ -545,16 +406,6 @@ const TableHeaderRow = styled.tr`
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
-const TableHeaderCell = styled.th`
-  padding: 14px 16px;
-  text-align: left;
-  font-size: 11px;
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.secondary};
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  background-color: ${({ theme }) => theme.colors.surface};
-`;
 
 const TableBody = styled.tbody``;
 
@@ -693,8 +544,8 @@ export const DashboardPage = () => {
   // Цвет обводки для графиков: белый на светлой теме, темный на темной
   const chartStrokeColor = isDark ? '#2D2D2D' : '#FFFFFF';
   const [activeView, setActiveView] = useState(null);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDate] = useState('');
+  const [endDate] = useState('');
   const [statsData, setStatsData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -801,17 +652,6 @@ export const DashboardPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeView, startDate, endDate]);
 
-  const handleSupportClick = () => {
-    navigate('/support-messages-stats');
-  };
-
-  const handleHelpdeskClick = () => {
-    navigate('/helpdesk-tags-stats');
-  };
-
-  const handleBackClick = () => {
-    setActiveView(null);
-  };
 
   const getTitle = () => {
     return 'Dashboard';

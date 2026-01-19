@@ -245,22 +245,6 @@ const Select = styled.select`
   }
 `;
 
-const CheckboxLabel = styled.label`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  user-select: none;
-  font-size: 14px;
-  color: ${({ theme }) => theme.colors.primary};
-`;
-
-const Checkbox = styled.input`
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  accent-color: ${({ theme }) => theme.colors.accent};
-`;
 
 const SaveButton = styled.button`
   align-self: flex-end;

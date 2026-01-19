@@ -545,12 +545,6 @@ const DecisionIcon = styled.div`
   }
 `;
 
-const SavingIndicator = styled.span`
-  font-size: 11px;
-  color: ${({ theme }) => theme.colors.secondary};
-  font-style: italic;
-`;
-
 const ResultExplanation = styled.div`
   font-size: 12px;
   color: ${({ theme }) => theme.colors.secondary};

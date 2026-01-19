@@ -70,6 +70,7 @@ const menuItems = [
   { label: 'Projects', path: '/projects' },
   { label: 'Chats', path: '/chats' },
   { label: 'Agents', path: '/agents' },
+  { label: 'Tags', path: '/tags' },
 ];
 
 export const Sidebar = () => {

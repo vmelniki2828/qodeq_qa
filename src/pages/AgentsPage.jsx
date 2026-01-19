@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styled, { ThemeProvider } from 'styled-components';
 import { useTheme } from '../contexts/ThemeContext';
 import { Layout } from '../components/Layout';
 import { Loader } from '../components/Loader';
-import { HiCheck, HiXMark } from 'react-icons/hi2';
+import { HiCheck, HiXMark, HiEye, HiPencil } from 'react-icons/hi2';
 
 const getCookie = (name) => {
   const value = `; ${document.cookie}`;
@@ -266,6 +267,7 @@ const TableHeaderCell = styled.th`
   letter-spacing: 0.5px;
   background-color: ${({ theme }) =>
     theme.colors.surface === '#F9FAFB' ? '#F0F1F3' : theme.colors.surface};
+  ${({ $width }) => $width && `width: ${$width}; min-width: ${$width};`}
 `;
 
 const TableBody = styled.tbody``;
@@ -287,6 +289,36 @@ const TableCell = styled.td`
   text-align: center;
   vertical-align: middle;
   word-break: break-word;
+`;
+
+const ActionsCell = styled(TableCell)`
+  width: 132px;
+  min-width: 132px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0 auto;
+  text-align: center;
+`;
+
+const ActionButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: none;
+  background: transparent;
+  color: ${({ theme }) => theme.colors.primary};
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background-color: ${({ theme }) =>
+      theme.colors.primary === '#0D0D0D' ? '#f0f0f0' : 'rgba(255,255,255,0.08)'};
+  }
 `;
 
 const ErrorBlock = styled.div`
@@ -391,6 +423,7 @@ const FilterLabel = styled.label`
 
 export const AgentsPage = () => {
   const { theme } = useTheme();
+  const navigate = useNavigate();
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -411,6 +444,7 @@ export const AgentsPage = () => {
   });
   const [isFiltersVisible, setIsFiltersVisible] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingAgent, setEditingAgent] = useState(null);
   const [createForm, setCreateForm] = useState({
     type: 'customer',
     lcid: '',
@@ -592,12 +626,26 @@ export const AgentsPage = () => {
 
   const handleCloseCreate = () => {
     setIsCreateOpen(false);
+    setEditingAgent(null);
     setCreateForm({
       type: 'customer',
       lcid: '',
       name: '',
       available: true,
       integration_id: ''
+    });
+  };
+
+  const handleEdit = (agent, e) => {
+    e?.stopPropagation();
+    setEditingAgent(agent);
+    setIsCreateOpen(true);
+    setCreateForm({
+      type: agent.type || 'customer',
+      lcid: agent.lcid || '',
+      name: agent.name || '',
+      available: agent.available === true || agent.available === 'true',
+      integration_id: agent.integration_id || ''
     });
   };
 
@@ -647,6 +695,50 @@ export const AgentsPage = () => {
     }
   };
 
+  const handleSaveEdit = async () => {
+    if (!createForm.name || !createForm.name.trim()) {
+      alert('Пожалуйста, заполните поле Name');
+      return;
+    }
+
+    if (!createForm.lcid || !createForm.lcid.trim()) {
+      alert('Пожалуйста, заполните поле LCID');
+      return;
+    }
+
+    if (!editingAgent || !editingAgent.id) {
+      alert('Ошибка: агент не найден');
+      return;
+    }
+
+    try {
+      const token = getCookie('rb_admin_token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      
+      const requestBody = {
+        type: createForm.type,
+        lcid: createForm.lcid.trim(),
+        name: createForm.name.trim(),
+        available: createForm.available
+      };
+      
+      const res = await fetch(`http://68.183.71.165:18100/api/v1/settings/agent/${editingAgent.id}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify(requestBody)
+      });
+      
+      if (!res.ok) throw new Error(`Ошибка ${res.status}`);
+      
+      // Обновляем список агентов
+      handleCloseCreate();
+      handleRefresh();
+    } catch (e) {
+      alert(`Ошибка при сохранении: ${e.message}`);
+    }
+  };
+
   const updateForm = (field, value) => {
     setCreateForm(prev => ({ ...prev, [field]: value }));
   };
@@ -673,12 +765,13 @@ export const AgentsPage = () => {
 
   // Получаем все уникальные ключи из данных для создания заголовков таблицы
   const getTableHeaders = () => {
-    if (agents.length === 0) return [];
+    if (agents.length === 0) return ['Actions'];
     const allKeys = new Set();
     agents.forEach(agent => {
       Object.keys(agent).forEach(key => allKeys.add(key));
     });
-    return Array.from(allKeys).sort();
+    const sortedKeys = Array.from(allKeys).sort();
+    return [...sortedKeys, 'Actions'];
   };
 
   const headers = getTableHeaders();
@@ -787,7 +880,11 @@ export const AgentsPage = () => {
                         <TableHeader theme={theme}>
                           <TableHeaderRow>
                             {headers.map((header) => (
-                              <TableHeaderCell key={header} theme={theme}>
+                              <TableHeaderCell 
+                                key={header} 
+                                theme={theme}
+                                $width={header === 'Actions' ? '132px' : undefined}
+                              >
                                 {header}
                               </TableHeaderCell>
                             ))}
@@ -796,21 +893,43 @@ export const AgentsPage = () => {
                         <TableBody>
                           {agents.map((agent, index) => (
                             <TableRow key={agent.id || index} theme={theme}>
-                              {headers.map((header) => (
-                                <TableCell key={header} theme={theme}>
-                                  {header === 'available' ? (
-                                    agent[header] === true || agent[header] === 'true' ? (
-                                      <HiCheck size={18} style={{ color: '#16a34a' }} />
-                                    ) : (
-                                      <HiXMark size={18} style={{ color: '#dc2626' }} />
-                                    )
-                                  ) : agent[header] !== null && agent[header] !== undefined
-                                    ? typeof agent[header] === 'object'
-                                      ? JSON.stringify(agent[header])
-                                      : String(agent[header])
-                                    : '—'}
-                                </TableCell>
-                              ))}
+                              {headers.map((header) => {
+                                if (header === 'Actions') {
+                                  return (
+                                    <ActionsCell key={header} theme={theme}>
+                                      <ActionButton
+                                        theme={theme}
+                                        onClick={() => navigate(`/agents/${agent.id}`)}
+                                        title="Просмотр деталей"
+                                      >
+                                        <HiEye size={16} />
+                                      </ActionButton>
+                                      <ActionButton
+                                        theme={theme}
+                                        onClick={(e) => handleEdit(agent, e)}
+                                        title="Редактировать"
+                                      >
+                                        <HiPencil size={16} />
+                                      </ActionButton>
+                                    </ActionsCell>
+                                  );
+                                }
+                                return (
+                                  <TableCell key={header} theme={theme}>
+                                    {header === 'available' ? (
+                                      agent[header] === true || agent[header] === 'true' ? (
+                                        <HiCheck size={18} style={{ color: '#16a34a' }} />
+                                      ) : (
+                                        <HiXMark size={18} style={{ color: '#dc2626' }} />
+                                      )
+                                    ) : agent[header] !== null && agent[header] !== undefined
+                                      ? typeof agent[header] === 'object'
+                                        ? JSON.stringify(agent[header])
+                                        : String(agent[header])
+                                      : '—'}
+                                  </TableCell>
+                                );
+                              })}
                             </TableRow>
                           ))}
                         </TableBody>
@@ -825,12 +944,12 @@ export const AgentsPage = () => {
 
             <Divider 
               theme={theme} 
-              $isHidden={!isCreateOpen}
+              $isHidden={!isCreateOpen && !editingAgent}
               onMouseDown={handleDividerMouseDown}
             />
 
-            <RightPanel theme={theme} $isVisible={isCreateOpen} $flex={100 - splitterPosition}>
-              {isCreateOpen && (
+            <RightPanel theme={theme} $isVisible={isCreateOpen || editingAgent} $flex={100 - splitterPosition}>
+              {(isCreateOpen || editingAgent) && (
                 <RightContent theme={theme}>
                   <BackButton theme={theme} onClick={handleCloseCreate}>
                     ← Назад
@@ -892,26 +1011,28 @@ export const AgentsPage = () => {
                     </SettingContent>
                   </SettingSection>
 
-                  <SettingSection>
-                    <SettingLabel theme={theme}>Integration ID:</SettingLabel>
-                    <SettingContent>
-                      <Select
-                        theme={theme}
-                        value={createForm.integration_id}
-                        onChange={(e) => updateForm('integration_id', e.target.value)}
-                      >
-                        <option value="">Выберите интеграцию</option>
-                        {integrations.map((integration) => (
-                          <option key={integration.id} value={integration.id}>
-                            {integration.name || integration.id}
-                          </option>
-                        ))}
-                      </Select>
-                    </SettingContent>
-                  </SettingSection>
+                  {!editingAgent && (
+                    <SettingSection>
+                      <SettingLabel theme={theme}>Integration ID:</SettingLabel>
+                      <SettingContent>
+                        <Select
+                          theme={theme}
+                          value={createForm.integration_id}
+                          onChange={(e) => updateForm('integration_id', e.target.value)}
+                        >
+                          <option value="">Выберите интеграцию</option>
+                          {integrations.map((integration) => (
+                            <option key={integration.id} value={integration.id}>
+                              {integration.name || integration.id}
+                            </option>
+                          ))}
+                        </Select>
+                      </SettingContent>
+                    </SettingSection>
+                  )}
 
-                  <SaveButton theme={theme} onClick={handleSaveCreate}>
-                    Создать
+                  <SaveButton theme={theme} onClick={editingAgent ? handleSaveEdit : handleSaveCreate}>
+                    {editingAgent ? 'Сохранить' : 'Создать'}
                   </SaveButton>
                 </RightContent>
               )}

@@ -10,6 +10,8 @@ import { ProjectDetailPage } from '../pages/ProjectDetailPage';
 import { IntegrationsPage } from '../pages/IntegrationsPage';
 import { IntegrationDetailPage } from '../pages/IntegrationDetailPage';
 import { AgentsPage } from '../pages/AgentsPage';
+import { AgentDetailPage } from '../pages/AgentDetailPage';
+import { TagsPage } from '../pages/TagsPage';
 
 const AppContent = () => {
   const { theme } = useTheme();
@@ -33,6 +35,8 @@ const AppContent = () => {
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/projects/:id" element={<ProjectDetailPage />} />
           <Route path="/agents" element={<AgentsPage />} />
+          <Route path="/agents/:id" element={<AgentDetailPage />} />
+          <Route path="/tags" element={<TagsPage />} />
         </Routes>
       </BrowserRouter>
     </StyledThemeProvider>

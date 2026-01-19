@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import styled, { ThemeProvider } from 'styled-components';
 import { useTheme } from '../contexts/ThemeContext';
@@ -233,7 +233,7 @@ export const ChatDetailPage = () => {
   const [chat, setChat] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchChatData = async (chatId) => {
+  const fetchChatData = useCallback(async (chatId) => {
     setIsLoading(true);
     try {
       const token = getCookie('rb_admin_token');
@@ -273,7 +273,7 @@ export const ChatDetailPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [location.state]);
 
   useEffect(() => {
     // Определяем ID для запроса: используем _id из location.state или ID из URL
@@ -290,7 +290,7 @@ export const ChatDetailPage = () => {
       }
       setIsLoading(false);
     }
-  }, [id, location.state]);
+  }, [id, location.state, fetchChatData]);
 
   const handleRefresh = () => {
     const chatId = chat?._id || id;

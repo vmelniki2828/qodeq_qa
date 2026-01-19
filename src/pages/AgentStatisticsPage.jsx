@@ -255,7 +255,6 @@ export const AgentStatisticsPage = () => {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [total, setTotal] = useState(0);
   const [pagesCount, setPagesCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({
@@ -299,7 +298,6 @@ export const AgentStatisticsPage = () => {
       const json = await res.json();
       
       setChats(Array.isArray(json.chats) ? json.chats : []);
-      setTotal(json.total || 0);
       setPagesCount(json.pages_count || 0);
     } catch (e) {
       setError(e.message);

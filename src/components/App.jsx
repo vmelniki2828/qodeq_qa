@@ -12,6 +12,8 @@ import { IntegrationDetailPage } from '../pages/IntegrationDetailPage';
 import { AgentsPage } from '../pages/AgentsPage';
 import { AgentDetailPage } from '../pages/AgentDetailPage';
 import { TagsPage } from '../pages/TagsPage';
+import { StatisticsPage } from '../pages/StatisticsPage';
+import { AgentStatisticsPage } from '../pages/AgentStatisticsPage';
 
 const AppContent = () => {
   const { theme } = useTheme();
@@ -37,6 +39,8 @@ const AppContent = () => {
           <Route path="/agents" element={<AgentsPage />} />
           <Route path="/agents/:id" element={<AgentDetailPage />} />
           <Route path="/tags" element={<TagsPage />} />
+          <Route path="/statistics" element={<StatisticsPage />} />
+          <Route path="/statistics/agent/:id" element={<AgentStatisticsPage />} />
         </Routes>
       </BrowserRouter>
     </StyledThemeProvider>

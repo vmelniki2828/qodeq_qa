@@ -71,6 +71,7 @@ const menuItems = [
   { label: 'Chats', path: '/chats' },
   { label: 'Agents', path: '/agents' },
   { label: 'Tags', path: '/tags' },
+  { label: 'Statistics', path: '/statistics' },
 ];
 
 export const Sidebar = () => {

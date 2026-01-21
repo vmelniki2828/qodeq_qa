@@ -41,20 +41,20 @@ const CalendarDropdown = styled.div`
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  padding: 20px;
+  padding: 12px;
   z-index: 1000;
-  width: 320px;
+  width: 260px;
 `;
 
 const CalendarHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 `;
 
 const MonthYear = styled.div`
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
   color: ${({ theme }) => theme.colors.primary};
 `;
@@ -63,10 +63,10 @@ const NavButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 8px;
+  border-radius: 6px;
   background-color: ${({ theme }) => theme.colors.background};
   color: ${({ theme }) => theme.colors.primary};
   cursor: pointer;
@@ -82,16 +82,16 @@ const NavButton = styled.button`
 const WeekDays = styled.div`
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-  margin-bottom: 8px;
+  gap: 2px;
+  margin-bottom: 6px;
 `;
 
 const WeekDay = styled.div`
   text-align: center;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 600;
   color: ${({ theme }) => theme.colors.secondary};
-  padding: 8px 0;
+  padding: 4px 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 `;
@@ -99,14 +99,14 @@ const WeekDay = styled.div`
 const CalendarGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-  margin-bottom: 16px;
+  gap: 2px;
+  margin-bottom: 0;
 `;
 
 const DayButton = styled.button`
   aspect-ratio: 1;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: 6px;
   background-color: ${({ theme, $isSelected, $isOtherMonth }) => {
     if ($isSelected) return '#22c55e';
     if ($isOtherMonth) return 'transparent';
@@ -117,13 +117,14 @@ const DayButton = styled.button`
     if ($isOtherMonth) return theme.colors.secondary;
     return theme.colors.primary;
   }};
-  font-size: 13px;
+  font-size: 11px;
   font-weight: ${({ $isSelected }) => ($isSelected ? '600' : '500')};
   cursor: ${({ $isOtherMonth }) => ($isOtherMonth ? 'default' : 'pointer')};
   transition: all 0.15s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 28px;
 
   &:hover {
     ${({ $isOtherMonth, $isSelected }) => {
@@ -300,13 +301,13 @@ export const DateTimePicker = ({ value, onChange, placeholder = 'Выберит�
         >
           <CalendarHeader>
             <NavButton theme={theme} onClick={handlePrevMonth}>
-              <HiChevronLeft size={18} />
+              <HiChevronLeft size={16} />
             </NavButton>
             <MonthYear theme={theme}>
               {months[currentDate.getMonth()]} {currentDate.getFullYear()}
             </MonthYear>
             <NavButton theme={theme} onClick={handleNextMonth}>
-              <HiChevronRight size={18} />
+              <HiChevronRight size={16} />
             </NavButton>
           </CalendarHeader>
           <WeekDays>

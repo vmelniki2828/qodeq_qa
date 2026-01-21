@@ -534,6 +534,9 @@ export const ChatsPage = () => {
               >
                 Filters
               </Button>
+              <Button theme={theme} $primary onClick={() => navigate('/manual-check')}>
+                Manual
+              </Button>
             </ButtonsGroup>
           </HeaderSection>
 

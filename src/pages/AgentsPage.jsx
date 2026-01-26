@@ -464,7 +464,7 @@ export const AgentsPage = () => {
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
         
-        const res = await fetch('http://68.183.71.165:18100/api/v1/settings/integrations/', {
+        const res = await fetch('/api/v1/settings/integrations/', {
           method: 'GET',
           headers
         });
@@ -499,7 +499,7 @@ export const AgentsPage = () => {
         params.append('skip', '0');
         params.append('limit', '10');
         
-        const url = `http://68.183.71.165:18100/api/v1/settings/agent/?${params.toString()}`;
+        const url = `/api/v1/settings/agent/?${params.toString()}`;
         
         const res = await fetch(url, {
           method: 'GET',
@@ -574,7 +574,7 @@ export const AgentsPage = () => {
         params.append('skip', '0');
         params.append('limit', '10');
         
-        const url = `http://68.183.71.165:18100/api/v1/settings/agent/?${params.toString()}`;
+        const url = `/api/v1/settings/agent/?${params.toString()}`;
         
         const res = await fetch(url, {
           method: 'GET',
@@ -681,7 +681,7 @@ export const AgentsPage = () => {
         integration_id: createForm.integration_id
       };
       
-      const res = await fetch('http://68.183.71.165:18100/api/v1/settings/agent/', {
+      const res = await fetch('/api/v1/settings/agent/', {
         method: 'POST',
         headers,
         body: JSON.stringify(requestBody)
@@ -727,7 +727,7 @@ export const AgentsPage = () => {
         available: createForm.available
       };
       
-      const res = await fetch(`http://68.183.71.165:18100/api/v1/settings/agent/${editingAgent.id}`, {
+      const res = await fetch(`/api/v1/settings/agent/${editingAgent.id}`, {
         method: 'PATCH',
         headers,
         body: JSON.stringify(requestBody)

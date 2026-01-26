@@ -39,12 +39,12 @@ const ThemeToggleWrapper = styled.div`
 `;
 
 export const LoginPage = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [codeDigits, setCodeDigits] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [show2FA, setShow2FA] = useState(false);
-  const [savedUsername, setSavedUsername] = useState('');
+  const [savedEmail, setSavedEmail] = useState('');
   const navigate = useNavigate();
   const { theme } = useTheme();
 
@@ -52,7 +52,7 @@ export const LoginPage = () => {
     e.preventDefault();
     
     // Проверка заполненности полей
-    if (!username || !password) {
+    if (!email || !password) {
       Notify.failure('Пожалуйста, заполните все поля');
       return;
     }
@@ -60,20 +60,22 @@ export const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('https://repayment.cat-tools.com/api/v1/auth/login', {
+      const response = await fetch('/api/v1/authorization/token/login', {
         method: 'POST',
+        credentials: 'include',
+        withCredentials: true,
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          username,
+          email,
           password,
         }),
       });
 
       // Если получили 401, переходим ко второму этапу (2FA)
       if (response.status === 401) {
-        setSavedUsername(username);
+        setSavedEmail(email);
         setShow2FA(true);
         setPassword('');
         setCodeDigits(['', '', '', '', '', '']);
@@ -100,7 +102,7 @@ export const LoginPage = () => {
       }
 
       if (!response.ok) {
-        Notify.failure(data.message || 'Неверный username или пароль');
+        Notify.failure(data.message || 'Неверный email или пароль');
         setIsLoading(false);
         return;
       }
@@ -194,66 +196,9 @@ export const LoginPage = () => {
     }
   };
 
-  const handle2FA = async (e) => {
-    e.preventDefault();
-    
-    // Собираем код из всех ячеек
-    const code = codeDigits.join('');
-    
-    // Проверка заполненности кода (6 цифр)
-    if (code.length !== 6 || !/^\d+$/.test(code)) {
-      Notify.failure('Пожалуйста, введите 6-значный код');
-      return;
-    }
 
-    setIsLoading(true);
 
-    try {
-      const token = getCookie('rb_admin_token');
-      const headers = {
-        'Content-Type': 'application/json',
-      };
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const response = await fetch('https://repayment.cat-tools.com/api/v1/auth/verify-2fa', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          username: savedUsername,
-          password: code,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        Notify.failure(data.message || 'Неверный код');
-        setIsLoading(false);
-        return;
-      }
-
-      // Сохраняем access_token в куки
-      if (data.access_token) {
-        setCookie('rb_admin_token', data.access_token);
-      }
-
-      // Успешная авторизация
-      Notify.success('Вход выполнен успешно!');
-      setIsLoading(false);
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 500);
-    } catch (error) {
-      console.error('Ошибка при верификации:', error);
-      Notify.failure('Произошла ошибка при верификации. Попробуйте позже.');
-      setIsLoading(false);
-    }
-  };
-
-  const handleSubmit = show2FA ? handle2FA : handleLogin;
+  const handleSubmit =  handleLogin;
 
   return (
     <LoginContainer theme={theme}>
@@ -284,7 +229,7 @@ export const LoginPage = () => {
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '20px' }}>
             <label
-              htmlFor="username"
+              htmlFor="email"
               style={{
                 display: 'block',
                 marginBottom: '8px',
@@ -293,13 +238,13 @@ export const LoginPage = () => {
                 fontWeight: '500',
               }}
             >
-              Username
+              Email
             </label>
             <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               style={{
                 width: '674px',
                 padding: '12px',
@@ -311,7 +256,7 @@ export const LoginPage = () => {
                 backgroundColor: theme.colors.background,
                 color: theme.colors.primary,
               }}
-              placeholder="Введите username"
+              placeholder="Введите email"
             />
           </div>
 

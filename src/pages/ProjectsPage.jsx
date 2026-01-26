@@ -507,7 +507,7 @@ export const ProjectsPage = () => {
         params.append('skip', '0');
         params.append('limit', '100');
         
-        const url = `http://68.183.71.165:18100/api/v1/settings/project/?${params.toString()}`;
+        const url = `/api/v1/settings/project/?${params.toString()}`;
         
         const res = await fetch(url, {
           method: 'GET',
@@ -535,7 +535,7 @@ export const ProjectsPage = () => {
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
         
-        const res = await fetch('http://68.183.71.165:18100/api/v1/settings/integrations/', {
+        const res = await fetch('/api/v1/settings/integrations/', {
           method: 'GET',
           headers
         });
@@ -641,7 +641,7 @@ export const ProjectsPage = () => {
         params.append('skip', '0');
         params.append('limit', '100');
         
-        const url = `http://68.183.71.165:18100/api/v1/settings/project/?${params.toString()}`;
+        const url = `/api/v1/settings/project/?${params.toString()}`;
         
         const res = await fetch(url, {
           method: 'GET',
@@ -731,7 +731,7 @@ export const ProjectsPage = () => {
         code: editForm.code
       };
       
-      const res = await fetch(`http://68.183.71.165:18100/api/v1/settings/project/${editingProject.id}`, {
+      const res = await fetch(`/api/v1/settings/project/${editingProject.id}`, {
         method: 'PATCH',
         headers,
         body: JSON.stringify(requestBody)
@@ -761,7 +761,7 @@ export const ProjectsPage = () => {
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
       
-      const res = await fetch(`http://68.183.71.165:18100/api/v1/settings/project/${project.id}`, {
+      const res = await fetch(`/api/v1/settings/project/${project.id}`, {
         method: 'DELETE',
         headers
       });
@@ -791,7 +791,7 @@ export const ProjectsPage = () => {
         integration_id: editForm.integration_id
       };
       
-      const res = await fetch('http://68.183.71.165:18100/api/v1/settings/project/', {
+      const res = await fetch('/api/v1/settings/project/', {
         method: 'POST',
         headers,
         body: JSON.stringify(requestBody)

@@ -616,7 +616,7 @@ export const ChatReviewedDetailPage = () => {
         const token = getCookie('rb_admin_token');
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
-        const res = await fetch(`http://68.183.71.165:18100/api/v1/chat/reviewedchat/${id}`, { method: 'GET', headers });
+        const res = await fetch(`/api/v1/chat/reviewedchat/${id}`, { method: 'GET', headers });
         if (!res.ok) throw new Error(res.status === 404 ? 'Чат не найден' : `Ошибка ${res.status}`);
         const json = await res.json();
         setData(json.chat || json);
@@ -636,7 +636,7 @@ export const ChatReviewedDetailPage = () => {
         const token = getCookie('rb_admin_token');
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
-        const res = await fetch('http://68.183.71.165:18100/api/v1/settings/tags/', { method: 'GET', headers });
+        const res = await fetch('/api/v1/settings/tags/', { method: 'GET', headers });
         if (!res.ok) throw new Error(`Ошибка ${res.status}`);
         const json = await res.json();
         setTagsSettings(json);

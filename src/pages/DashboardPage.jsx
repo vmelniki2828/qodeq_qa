@@ -555,8 +555,9 @@ export const DashboardPage = () => {
           headers['Authorization'] = `Bearer ${token}`;
         }
 
-        const response = await fetch('http://68.183.71.165:18100/api/v1/profile/user/dashboard', {
+        const response = await fetch('/api/v1/profile/user/dashboard', {
           method: 'GET',
+          credentials: "include",
           headers,
         });
 
@@ -585,61 +586,8 @@ export const DashboardPage = () => {
     fetchStats();
   }, []);
 
-  const fetchSupportStats = async () => {
-    setIsLoadingSupport(true);
-    try {
-      const token = getCookie('rb_admin_token');
-      const headers = {
-        'Content-Type': 'application/json',
-      };
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
 
-      const params = new URLSearchParams();
-      if (startDate) {
-        params.append('start', startDate);
-      }
-      if (endDate) {
-        params.append('end', endDate);
-      }
 
-      const queryString = params.toString();
-      const url = `https://repayment.cat-tools.com/api/v1/admin/stats/support-messages${queryString ? `?${queryString}` : ''}`;
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers,
-      });
-
-      if (response.status === 401) {
-        setSupportData(null);
-        setIsLoadingSupport(false);
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      setSupportData(data);
-    } catch (err) {
-      console.error('Ошибка при загрузке статистики поддержки:', err);
-      setSupportData(null);
-      Notify.failure('Ошибка при загрузке статистики поддержки');
-    } finally {
-      setIsLoadingSupport(false);
-    }
-  };
-
-  useEffect(() => {
-    if (activeView === 'support') {
-      fetchSupportStats();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeView, startDate, endDate]);
 
 
   const getTitle = () => {

@@ -8,14 +8,7 @@ import { Pagination } from '../components/Pagination';
 import { HiEye, HiCheck, HiXMark } from 'react-icons/hi2';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import { DateTimePicker } from '../components/DateTimePicker';
-
-// Функция для получения токена из куки
-const getCookie = (name) => {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(';').shift();
-  return null;
-};
+import { apiFetch, getCookie } from '../utils/api';
 
 const formatChatDate = (v) => {
   if (!v) return '—';
@@ -368,10 +361,9 @@ export const ChatsPage = () => {
       if (appliedFilters.created_to) params.append('created_to', appliedFilters.created_to);
       if (appliedFilters.checked !== '') params.append('checked', appliedFilters.checked);
       
-      const url = `http://68.183.71.165:18100/api/v1/chat/reviewedchat/?${params.toString()}`;
-      const response = await fetch(url, {
+      const url = `/api/v1/chat/reviewedchat/?${params.toString()}`;
+      const response = await apiFetch(url, {
         method: 'GET',
-        headers,
       });
 
       if (response.status === 401) {
@@ -443,9 +435,8 @@ export const ChatsPage = () => {
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
         
-        const res = await fetch('http://68.183.71.165:18100/api/v1/settings/project/?skip=0&limit=100', {
+        const res = await apiFetch('/api/v1/settings/project/?skip=0&limit=100', {
           method: 'GET',
-          headers
         });
         
         if (!res.ok) throw new Error(`Ошибка ${res.status}`);

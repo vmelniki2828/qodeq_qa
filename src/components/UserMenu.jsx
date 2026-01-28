@@ -3,6 +3,8 @@ import { useTheme } from '../contexts/ThemeContext';
 import { ToggleTheme } from './ToggleTheme';
 import { useNavigate } from 'react-router-dom';
 import { HiUserCircle } from 'react-icons/hi2';
+import { useState, useEffect } from 'react';
+import { apiFetch } from '../utils/api';
 
 const UserMenuContainer = styled.div`
   position: relative;
@@ -106,11 +108,70 @@ const ThemeLabel = styled.span`
   color: ${({ theme }) => theme.colors.secondary};
 `;
 
+const UserInfo = styled.div`
+  padding: 12px;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  margin-bottom: 8px;
+`;
+
+const UserInfoItem = styled.div`
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.primary};
+  margin-bottom: 6px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const UserInfoLabel = styled.span`
+  color: ${({ theme }) => theme.colors.secondary};
+  font-weight: 500;
+  margin-right: 6px;
+`;
+
+const UserInfoValue = styled.span`
+  color: ${({ theme }) => theme.colors.primary};
+`;
+
 export const UserMenu = () => {
   const { theme } = useTheme();
   const navigate = useNavigate();
+  const [userProfile, setUserProfile] = useState(null);
+
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      // Сначала пытаемся загрузить из localStorage
+      const savedProfile = localStorage.getItem('userProfile');
+      if (savedProfile) {
+        try {
+          setUserProfile(JSON.parse(savedProfile));
+        } catch (e) {
+          console.error('Ошибка при парсинге сохраненного профиля:', e);
+        }
+      }
+
+      // Затем обновляем данные с сервера
+      try {
+        const response = await apiFetch('/api/v1/profile/user/me', {
+          method: 'GET',
+        });
+
+        if (response.ok) {
+          const profileData = await response.json();
+          setUserProfile(profileData);
+          localStorage.setItem('userProfile', JSON.stringify(profileData));
+        }
+      } catch (error) {
+        console.error('Ошибка при загрузке профиля:', error);
+      }
+    };
+
+    loadUserProfile();
+  }, []);
 
   const handleLogout = () => {
+    localStorage.removeItem('userProfile');
     navigate('/login');
   };
 
@@ -120,6 +181,34 @@ export const UserMenu = () => {
         <HiUserCircle style={{ fontSize: '24px', color: theme.colors.primary }} />
       </UserIconButton>
       <DropdownMenu theme={theme}>
+        {userProfile && (
+          <UserInfo theme={theme}>
+            {userProfile.username && (
+              <UserInfoItem theme={theme}>
+                <UserInfoLabel theme={theme}>Имя:</UserInfoLabel>
+                <UserInfoValue theme={theme}>{userProfile.username}</UserInfoValue>
+              </UserInfoItem>
+            )}
+            {userProfile.email && (
+              <UserInfoItem theme={theme}>
+                <UserInfoLabel theme={theme}>Email:</UserInfoLabel>
+                <UserInfoValue theme={theme}>{userProfile.email}</UserInfoValue>
+              </UserInfoItem>
+            )}
+            {userProfile.role && (
+              <UserInfoItem theme={theme}>
+                <UserInfoLabel theme={theme}>Роль:</UserInfoLabel>
+                <UserInfoValue theme={theme}>{userProfile.role}</UserInfoValue>
+              </UserInfoItem>
+            )}
+            {userProfile.department && (
+              <UserInfoItem theme={theme}>
+                <UserInfoLabel theme={theme}>Отдел:</UserInfoLabel>
+                <UserInfoValue theme={theme}>{userProfile.department}</UserInfoValue>
+              </UserInfoItem>
+            )}
+          </UserInfo>
+        )}
         <MenuItem theme={theme}>
           <ThemeSection>
             <ThemeLabel theme={theme}>Тема</ThemeLabel>

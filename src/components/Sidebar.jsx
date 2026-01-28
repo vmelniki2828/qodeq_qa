@@ -72,6 +72,7 @@ const menuItems = [
   { label: 'Agents', path: '/agents' },
   { label: 'Tags', path: '/tags' },
   { label: 'Statistics', path: '/statistics' },
+  { label: 'Settings', path: '/settings' },
 ];
 
 export const Sidebar = () => {

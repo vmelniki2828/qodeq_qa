@@ -4,21 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import { ToggleTheme } from '../components/ToggleTheme';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
-
-// Функция для получения токена из куки
-const getCookie = (name) => {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(';').shift();
-  return null;
-};
-
-// Функция для установки куки
-const setCookie = (name, value, days = 365) => {
-  const expires = new Date();
-  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
-};
+import { apiFetch, getCookie, setCookie } from '../utils/api';
 
 const LoginContainer = styled.div`
   min-height: 100vh;
@@ -110,6 +96,22 @@ export const LoginPage = () => {
       // Сохраняем access_token в куки, если он есть в ответе
       if (data.access_token) {
         setCookie('rb_admin_token', data.access_token);
+      }
+
+      // Загружаем данные профиля пользователя
+      try {
+        const profileResponse = await apiFetch('/api/v1/profile/user/me', {
+          method: 'GET',
+        });
+
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json();
+          // Сохраняем данные профиля в localStorage
+          localStorage.setItem('userProfile', JSON.stringify(profileData));
+        }
+      } catch (error) {
+        console.error('Ошибка при загрузке профиля:', error);
+        // Не блокируем вход, если не удалось загрузить профиль
       }
 
       // Если запрос успешен (не 401), переходим сразу на dashboard
@@ -223,7 +225,7 @@ export const LoginPage = () => {
             fontSize: '28px',
           }}
         >
-          Qodeq Payment Panel
+          Qodeq QA
         </h2>
 
         <form onSubmit={handleSubmit}>

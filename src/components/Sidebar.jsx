@@ -72,6 +72,7 @@ const menuItems = [
   { label: 'Agents', path: '/agents' },
   { label: 'Tags', path: '/tags' },
   { label: 'Statistics', path: '/statistics' },
+  { label: 'Groups QA', path: '/groups-qa' },
   { label: 'Settings', path: '/settings' },
 ];
 

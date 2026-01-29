@@ -16,6 +16,7 @@ import { StatisticsPage } from '../pages/StatisticsPage';
 import { AgentStatisticsPage } from '../pages/AgentStatisticsPage';
 import { ManualCheckPage } from '../pages/ManualCheckPage';
 import { SettingsPage } from '../pages/SettingsPage';
+import { GroupsQAPage } from '../pages/GroupsQAPage';
 
 const AppContent = () => {
   const { theme } = useTheme();
@@ -44,6 +45,7 @@ const AppContent = () => {
           <Route path="/statistics" element={<StatisticsPage />} />
           <Route path="/statistics/agent/:id" element={<AgentStatisticsPage />} />
           <Route path="/manual-check" element={<ManualCheckPage />} />
+          <Route path="/groups-qa" element={<GroupsQAPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Routes>
       </BrowserRouter>

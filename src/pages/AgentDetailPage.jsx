@@ -155,7 +155,7 @@ export const AgentDetailPage = () => {
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
         
-        const res = await fetch(`/api/v1/settings/agent/${id}`, {
+        const res = await fetch(`https://209.38.246.190/api/v1/settings/agent/${id}`, {
           method: 'GET',
           headers
         });
@@ -280,6 +280,7 @@ export const AgentDetailPage = () => {
     </Layout>
   );
 };
+
 
 
 

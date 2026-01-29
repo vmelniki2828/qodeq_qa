@@ -287,7 +287,7 @@ export const AgentStatisticsPage = () => {
       if (appliedFilters.date_start) params.append('date_start', appliedFilters.date_start);
       if (appliedFilters.date_end) params.append('date_end', appliedFilters.date_end);
       
-      const url = `/api/v1/chat/statistics/chats?${params.toString()}`;
+      const url = `https://209.38.246.190/api/v1/chat/statistics/chats?${params.toString()}`;
       
       const res = await fetch(url, {
         method: 'GET',

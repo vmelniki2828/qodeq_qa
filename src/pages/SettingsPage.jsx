@@ -215,7 +215,8 @@ const SaveLimitButton = styled.button`
 `;
 
 const PromptSelect = styled.select`
-  width: 200px;
+  width: 100%;
+  max-width: 300px;
   padding: 6px 10px;
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 6px;
@@ -237,32 +238,6 @@ const PromptSelect = styled.select`
   }
 `;
 
-const LanguageGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-bottom: 20px;
-`;
-
-const LanguageCard = styled.div`
-  padding: 16px 20px;
-  background: ${({ theme }) => theme.colors.surface};
-  border: 1px solid ${({ theme, $selected }) => $selected ? theme.colors.accent : theme.colors.border};
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  text-align: center;
-  font-size: 14px;
-  font-weight: 600;
-  color: ${({ theme, $selected }) => $selected ? theme.colors.accent : theme.colors.primary};
-  border-left: ${({ theme, $selected }) => $selected ? `4px solid ${theme.colors.accent}` : `1px solid ${theme.colors.border}`};
-
-  &:hover {
-    border-color: ${({ theme }) => theme.colors.accent};
-    background-color: ${({ theme }) =>
-      theme.colors.primary === '#0D0D0D' ? 'rgba(0,0,0,0.02)' : 'rgba(255,255,255,0.04)'};
-  }
-`;
 
 const PromptGrid = styled.div`
   display: grid;
@@ -715,29 +690,18 @@ function renderSettingsData(data, theme, onLimitChange, limitValue, isSavingLimi
                 {isPromptVersion && onPromptVersionChange && isEditingPromptVersion ? (
                   <div style={{ marginBottom: '20px' }}>
                     <InfoCardLabel theme={theme} style={{ marginBottom: '12px' }}>Выберите язык:</InfoCardLabel>
-                    <LanguageGrid theme={theme}>
-                      <LanguageCard
+                    <LimitEditor>
+                      <PromptSelect
                         theme={theme}
-                        $selected={selectedLanguage === 'RUSSIAN'}
-                        onClick={() => onLanguageChange('RUSSIAN')}
+                        value={selectedLanguage || ''}
+                        onChange={(e) => onLanguageChange(e.target.value)}
                       >
-                        RUSSIAN
-                      </LanguageCard>
-                      <LanguageCard
-                        theme={theme}
-                        $selected={selectedLanguage === 'ENGLISH'}
-                        onClick={() => onLanguageChange('ENGLISH')}
-                      >
-                        ENGLISH
-                      </LanguageCard>
-                      <LanguageCard
-                        theme={theme}
-                        $selected={selectedLanguage === 'SPANISH'}
-                        onClick={() => onLanguageChange('SPANISH')}
-                      >
-                        SPANISH
-                      </LanguageCard>
-                    </LanguageGrid>
+                        <option value="">Все языки</option>
+                        <option value="RUSSIAN">RUSSIAN</option>
+                        <option value="ENGLISH">ENGLISH</option>
+                        <option value="SPANISH">SPANISH</option>
+                      </PromptSelect>
+                    </LimitEditor>
                     {isLoadingPrompts ? (
                       <div style={{ textAlign: 'center', padding: '20px', color: theme.colors.secondary }}>
                         Загрузка вариантов...
@@ -824,7 +788,7 @@ export const SettingsPage = () => {
   const [isLoadingPrompts, setIsLoadingPrompts] = useState(false);
   const [isSavingPromptVersion, setIsSavingPromptVersion] = useState(false);
   const [isEditingPromptVersion, setIsEditingPromptVersion] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState('RUSSIAN');
+  const [selectedLanguage, setSelectedLanguage] = useState('');
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -1084,12 +1048,35 @@ export const SettingsPage = () => {
     }
   };
 
-  const handleEditPromptVersion = (isEditing) => {
+  const handleEditPromptVersion = async (isEditing) => {
     setIsEditingPromptVersion(isEditing);
     
-    if (!isEditing) {
+    if (isEditing) {
+      // При открытии редактирования загружаем все prompts без фильтра по языку
+      setIsLoadingPrompts(true);
+      try {
+        const response = await apiFetch('/api/v1/settings/main/prompts', {
+          method: 'GET',
+        });
+
+        if (response.ok) {
+          const options = await response.json();
+          console.log('Загружены варианты prompts:', options);
+          setPromptOptions(Array.isArray(options) ? options : []);
+        } else {
+          Notify.failure('Ошибка при загрузке вариантов prompts');
+          setPromptOptions([]);
+        }
+      } catch (error) {
+        console.error('Ошибка при загрузке prompts:', error);
+        Notify.failure('Произошла ошибка при загрузке вариантов prompts');
+        setPromptOptions([]);
+      } finally {
+        setIsLoadingPrompts(false);
+      }
+    } else {
       // При закрытии редактирования сбрасываем выбранный язык и варианты
-      setSelectedLanguage('RUSSIAN');
+      setSelectedLanguage('');
       setPromptOptions([]);
       setPromptVersionValue(null);
     }
@@ -1099,16 +1086,17 @@ export const SettingsPage = () => {
     setSelectedLanguage(language);
     setPromptVersionValue(null); // Сбрасываем выбранный prompt при смене языка
     
-    // Загружаем варианты prompts для выбранного языка
+    // Загружаем варианты prompts для выбранного языка с параметром ?language=
     setIsLoadingPrompts(true);
     try {
-      const response = await apiFetch(`/api/v1/settings/main/prompts?language=${language}`, {
+      const url = language ? `/api/v1/settings/main/prompts?language=${language}` : '/api/v1/settings/main/prompts';
+      const response = await apiFetch(url, {
         method: 'GET',
       });
 
       if (response.ok) {
         const options = await response.json();
-        console.log('Загружены варианты prompts для языка', language, ':', options);
+        console.log('Загружены варианты prompts для языка', language || 'все', ':', options);
         setPromptOptions(Array.isArray(options) ? options : []);
       } else {
         Notify.failure('Ошибка при загрузке вариантов prompts');

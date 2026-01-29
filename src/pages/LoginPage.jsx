@@ -46,7 +46,7 @@ export const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/v1/authorization/token/login', {
+      const response = await fetch('https://209.38.246.190/api/v1/authorization/token/login', {
         method: 'POST',
         credentials: 'include',
         withCredentials: true,

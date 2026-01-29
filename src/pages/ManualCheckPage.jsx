@@ -611,7 +611,7 @@ export const ManualCheckPage = () => {
         }
       }
 
-      const url = `/api/v1/chat/reviewedchat/special/manual_check?${params.toString()}`;
+      const url = `https://209.38.246.190/api/v1/chat/reviewedchat/special/manual_check?${params.toString()}`;
       const res = await fetch(url, { method: 'GET', headers });
       
       if (!res.ok) {

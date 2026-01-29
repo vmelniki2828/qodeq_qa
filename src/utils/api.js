@@ -1,3 +1,6 @@
+// Базовый URL для API
+export const API_BASE_URL = 'https://209.38.246.190';
+
 // Функция для получения токена из куки
 export const getCookie = (name) => {
   const value = `; ${document.cookie}`;
@@ -11,6 +14,17 @@ export const setCookie = (name, value, days = 365) => {
   const expires = new Date();
   expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
   document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+};
+
+// Функция для добавления базового URL к относительным путям API
+const getFullUrl = (url) => {
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url; // Уже полный URL
+  }
+  if (url.startsWith('/api')) {
+    return `${API_BASE_URL}${url}`;
+  }
+  return url;
 };
 
 // Флаг для предотвращения множественных одновременных запросов на обновление токена
@@ -30,7 +44,7 @@ const refreshToken = async () => {
   isRefreshing = true;
   refreshPromise = (async () => {
     try {
-      const response = await fetch('/api/v1/authorization/token/refresh', {
+      const response = await fetch(`${API_BASE_URL}/api/v1/authorization/token/refresh`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -94,6 +108,9 @@ export const apiFetch = async (url, options = {}, retryOn401 = true) => {
   // Получаем токен из куки
   const token = getCookie('rb_admin_token');
   
+  // Добавляем базовый URL к относительным путям
+  const fullUrl = getFullUrl(url);
+  
   // Подготавливаем заголовки
   const headers = {
     'Content-Type': 'application/json',
@@ -106,7 +123,7 @@ export const apiFetch = async (url, options = {}, retryOn401 = true) => {
   }
 
   // Выполняем запрос
-  let response = await fetch(url, {
+  let response = await fetch(fullUrl, {
     ...options,
     headers,
     credentials: options.credentials || 'include',
@@ -128,7 +145,7 @@ export const apiFetch = async (url, options = {}, retryOn401 = true) => {
       }
 
       // Повторяем оригинальный запрос
-      response = await fetch(url, {
+      response = await fetch(fullUrl, {
         ...options,
         headers,
         credentials: options.credentials || 'include',

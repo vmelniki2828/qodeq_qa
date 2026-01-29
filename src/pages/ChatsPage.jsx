@@ -444,8 +444,8 @@ export const ChatsPage = () => {
         setProjects(Array.isArray(json) ? json : []);
       } catch (e) {
         console.error('Ошибка при загрузке проектов:', e);
-      }
-    };
+    }
+  };
     fetchProjects();
   }, []);
 
@@ -575,8 +575,8 @@ export const ChatsPage = () => {
             <FilterGroup>
               <FilterLabelStyled theme={theme}>Username</FilterLabelStyled>
               <Input
-                theme={theme}
-                type="text"
+              theme={theme}
+              type="text"
                 placeholder="Введите username"
                 value={filters.username}
                 onChange={(e) => setFilters(prev => ({ ...prev, username: e.target.value }))}
@@ -601,10 +601,10 @@ export const ChatsPage = () => {
             <FilterGroup>
               <FilterLabelStyled theme={theme}>Checked</FilterLabelStyled>
               <Select
-                theme={theme}
+              theme={theme}
                 value={filters.checked}
                 onChange={(e) => setFilters(prev => ({ ...prev, checked: e.target.value }))}
-              >
+            >
                 <option value="">Все</option>
                 <option value="true">Checked</option>
                 <option value="false">Not Checked</option>

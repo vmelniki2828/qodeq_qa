@@ -275,7 +275,11 @@ const ModalContent = styled.div`
   background-color: ${({ theme }) => theme.colors.surface};
   border-radius: 16px;
   padding: 24px;
-  max-width: ${({ $isCreateModal }) => ($isCreateModal ? '800px' : '600px')};
+  max-width: ${({ $isCreateModal, $isDetailsModal }) => {
+    if ($isCreateModal) return '800px';
+    if ($isDetailsModal) return '900px';
+    return '600px';
+  }};
   width: 90%;
   max-height: 90vh;
   overflow-y: auto;
@@ -776,9 +780,11 @@ const AddAgentButtonSmall = styled.button`
 const AgentList = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   max-height: 400px;
   overflow-y: auto;
+  padding-right: 8px;
+  margin-right: -8px;
 
   &::-webkit-scrollbar {
     width: 8px;
@@ -787,6 +793,7 @@ const AgentList = styled.div`
   &::-webkit-scrollbar-track {
     background: ${({ theme }) => theme.colors.background};
     border-radius: 4px;
+    margin: 4px 0;
   }
 
   &::-webkit-scrollbar-thumb {
@@ -1291,7 +1298,8 @@ const renderGroupDetails = (data, theme, isEditing = false, editValues = {}, onE
       }
     });
 
-    // Разделяем примитивы на обычные, comment и agents
+    // Разделяем примитивы на name/head_username, обычные, comment и agents
+    const nameHeadPrimitives = [];
     const regularPrimitives = [];
     const commentPrimitive = [];
     const agentsPrimitive = [];
@@ -1302,6 +1310,8 @@ const renderGroupDetails = (data, theme, isEditing = false, editValues = {}, onE
         commentPrimitive.push([key, value]);
       } else if (lowerKey === 'agents') {
         agentsPrimitive.push([key, value]);
+      } else if (lowerKey === 'name' || lowerKey === 'head_username') {
+        nameHeadPrimitives.push([key, value]);
       } else {
         regularPrimitives.push([key, value]);
       }
@@ -1309,6 +1319,74 @@ const renderGroupDetails = (data, theme, isEditing = false, editValues = {}, onE
 
     return (
       <div>
+        {nameHeadPrimitives.length > 0 && (
+          <InfoGrid theme={theme} style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: '24px' }}>
+            {nameHeadPrimitives.map(([key, value]) => {
+              const lowerKey = key.toLowerCase();
+              const isEditable = isEditing && (lowerKey === 'name' || lowerKey === 'head_username');
+              const isHeadUsername = lowerKey === 'head_username';
+              
+              return (
+                <InfoCard key={key} theme={theme}>
+                  <InfoCardLabel theme={theme}>{formatLabel(key)}</InfoCardLabel>
+                  <InfoCardValue theme={theme}>
+                    {isEditable && isHeadUsername ? (
+                      <EditableSelect
+                        theme={theme}
+                        value={editValues[lowerKey] !== undefined ? editValues[lowerKey] : formatValue(value)}
+                        onChange={(e) => {
+                          const selectedValue = e.target.value;
+                          const selectedHead = heads.find(head => {
+                            if (typeof head === 'object' && head !== null) {
+                              const headValue = head.username || head.head_username || head.name || '';
+                              return headValue === selectedValue;
+                            }
+                            return head === selectedValue;
+                          });
+                          const headUsername = selectedHead 
+                            ? (selectedHead.username || selectedHead.head_username || selectedHead.name || '') 
+                            : selectedValue;
+                          onEditChange && onEditChange(lowerKey, headUsername);
+                        }}
+                      >
+                        <option value="">Выберите руководителя</option>
+                        {heads.map((head, index) => {
+                          const headDisplayName = typeof head === 'object' && head !== null
+                            ? (head.name || head.username || head.head_username || head.id || '')
+                            : head;
+                          const headValue = typeof head === 'object' && head !== null
+                            ? (head.username || head.head_username || head.name || '')
+                            : head;
+                          return (
+                            <option key={index} value={headValue}>
+                              {headDisplayName}
+                            </option>
+                          );
+                        })}
+                      </EditableSelect>
+                    ) : isEditable ? (
+                      <EditableInput
+                        theme={theme}
+                        type="text"
+                        value={editValues[lowerKey] !== undefined ? editValues[lowerKey] : formatValue(value)}
+                        onChange={(e) => onEditChange && onEditChange(lowerKey, e.target.value)}
+                      />
+                    ) : Array.isArray(value) ? (
+                      <TagsWrap theme={theme}>
+                        {value.map((v, i) => (
+                          <Tag key={i} theme={theme}>{formatValue(v)}</Tag>
+                        ))}
+                      </TagsWrap>
+                    ) : (
+                      formatValue(value)
+                    )}
+                  </InfoCardValue>
+                </InfoCard>
+              );
+            })}
+          </InfoGrid>
+        )}
+
         {regularPrimitives.length > 0 && (
           <InfoGrid theme={theme}>
             {regularPrimitives.map(([key, value]) => {
@@ -1514,6 +1592,8 @@ export const GroupsQAPage = () => {
   const [agentFilter, setAgentFilter] = useState('');
   const hasLoadedRef = useRef(false);
   const headsLoadedRef = useRef(false);
+  const isFetchingRef = useRef(false);
+  const previousMonthRef = useRef(null);
   const [createForm, setCreateForm] = useState({
     name: '',
     head_id: '',
@@ -1529,6 +1609,12 @@ export const GroupsQAPage = () => {
       return;
     }
 
+    // Предотвращаем множественные одновременные запросы
+    if (isFetchingRef.current) {
+      return;
+    }
+
+    isFetchingRef.current = true;
     setLoading(true);
     setError(null);
     
@@ -1574,6 +1660,7 @@ export const GroupsQAPage = () => {
       Notify.failure(errorMessage);
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
   };
 
@@ -1972,17 +2059,20 @@ export const GroupsQAPage = () => {
     }
   };
 
-  // Автоматическая загрузка данных при монтировании компонента
+  // Автоматическая загрузка данных при монтировании
   useEffect(() => {
     if (selectedMonth && !hasLoadedRef.current) {
       hasLoadedRef.current = true;
+      previousMonthRef.current = selectedMonth;
       fetchData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Выполняется только при монтировании
 
-  // Автоматическая загрузка данных при изменении месяца (после первой загрузки)
+  // Автоматическая загрузка данных при изменении месяца
   useEffect(() => {
-    if (selectedMonth && hasLoadedRef.current) {
+    if (selectedMonth && hasLoadedRef.current && previousMonthRef.current !== selectedMonth) {
+      previousMonthRef.current = selectedMonth;
       fetchData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2268,7 +2358,7 @@ export const GroupsQAPage = () => {
 
       {isDetailsModalOpen && (
         <ModalOverlay onClick={handleCloseDetailsModal}>
-          <ModalContent theme={theme} onClick={(e) => e.stopPropagation()}>
+          <ModalContent theme={theme} $isDetailsModal={true} onClick={(e) => e.stopPropagation()}>
             <ModalHeader>
               <ModalTitle theme={theme}>Group Details</ModalTitle>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

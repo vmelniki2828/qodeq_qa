@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled, { ThemeProvider } from 'styled-components';
 import { useTheme } from '../contexts/ThemeContext';
 import { Layout } from '../components/Layout';
 import { Loader } from '../components/Loader';
-import { DateTimePicker } from '../components/DateTimePicker';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
 const getCookie = (name) => {
@@ -12,6 +11,77 @@ const getCookie = (name) => {
   const parts = value.split(`; ${name}=`);
   if (parts.length === 2) return parts.pop().split(';').shift();
   return null;
+};
+
+// Функция для получения начала месяца
+const getMonthStart = (year, month) => {
+  return new Date(year, month, 1);
+};
+
+// Функция для получения конца месяца
+const getMonthEnd = (year, month) => {
+  return new Date(year, month + 1, 0);
+};
+
+// Функция для форматирования даты в YYYY-MM-DD
+const formatDateForAPI = (date) => {
+  // Если это уже строка в формате YYYY-MM-DD, возвращаем как есть
+  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return date;
+  }
+  
+  // Если это объект Date
+  if (date instanceof Date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  
+  // Если это строка с датой, пытаемся преобразовать
+  if (typeof date === 'string') {
+    const dateObj = new Date(date);
+    if (!isNaN(dateObj.getTime())) {
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+  }
+  
+  return date;
+};
+
+// Функция для генерации списка месяцев
+const generateMonths = () => {
+  const months = [];
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth();
+  
+  // Генерируем 12 месяцев назад от текущего
+  for (let i = 0; i < 12; i++) {
+    const date = new Date(currentYear, currentMonth - i, 1);
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const monthName = date.toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
+    months.push({
+      value: `${year}-${String(month + 1).padStart(2, '0')}`,
+      label: monthName.charAt(0).toUpperCase() + monthName.slice(1),
+      year,
+      month
+    });
+  }
+  
+  return months;
+};
+
+// Функция для получения начального месяца (текущий месяц)
+const getInitialMonth = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth();
+  return `${year}-${String(month + 1).padStart(2, '0')}`;
 };
 
 const PageContent = styled.div`
@@ -39,6 +109,55 @@ const Title = styled.h2`
 const ButtonsGroup = styled.div`
   display: flex;
   gap: 8px;
+`;
+
+const FilterGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 180px;
+`;
+
+const FilterLabel = styled.label`
+  font-size: 11px;
+  font-weight: 500;
+  color: ${({ theme }) => theme.colors.secondary};
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+`;
+
+const FilterSelect = styled.select`
+  width: auto;
+  min-width: 200px;
+  padding: 8px 12px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 8px;
+  background-color: ${({ theme }) => theme.colors.background};
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+
+  &:focus {
+    border-color: ${({ theme }) => theme.colors.accent};
+  }
+
+  &::-ms-expand {
+    display: none;
+  }
+
+  option {
+    background-color: ${({ theme }) => theme.colors.background};
+    color: ${({ theme }) => theme.colors.primary};
+  }
 `;
 
 const Button = styled.button`
@@ -84,21 +203,6 @@ const FilterButtons = styled.div`
   display: flex;
   gap: 8px;
   margin-left: auto;
-`;
-
-const FilterGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 150px;
-`;
-
-const FilterLabel = styled.label`
-  font-size: 11px;
-  font-weight: 500;
-  color: ${({ theme }) => theme.colors.secondary};
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 `;
 
 const Input = styled.input`
@@ -328,74 +432,95 @@ export const StatisticsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [stats, setStats] = useState(null);
-  const [filters, setFilters] = useState({
-    id: '',
-    checked: 'false',
-    date_start: '',
-    date_end: ''
-  });
-  const [appliedFilters, setAppliedFilters] = useState({
-    id: '',
-    checked: 'false',
-    date_start: '',
-    date_end: ''
-  });
-  const [isFiltersVisible, setIsFiltersVisible] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(getInitialMonth());
+  const [checked, setChecked] = useState('All');
+  const months = generateMonths();
+  const hasLoadedRef = useRef(false);
+  const previousMonthRef = useRef(null);
+  const isFetchingRef = useRef(false);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const token = getCookie('rb_admin_token');
-        const headers = { 'Content-Type': 'application/json' };
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-        
-        const params = new URLSearchParams();
-        if (appliedFilters.id) params.append('id', appliedFilters.id);
-        if (appliedFilters.checked !== '') params.append('checked', appliedFilters.checked);
-        if (appliedFilters.date_start) params.append('date_start', appliedFilters.date_start);
-        if (appliedFilters.date_end) params.append('date_end', appliedFilters.date_end);
-        
-        const url = `https://209.38.246.190/api/v1/chat/statistics?${params.toString()}`;
-        
-        const res = await fetch(url, {
-          method: 'GET',
-          headers
-        });
-        
-        if (!res.ok) throw new Error(`Ошибка ${res.status}`);
-        const json = await res.json();
-        setStats(json);
-      } catch (e) {
-        setError(e.message);
-        setStats(null);
-        Notify.failure('Ошибка при загрузке статистики');
-      } finally {
-        setLoading(false);
+  const fetchStats = async () => {
+    if (!selectedMonth) {
+      Notify.warning('Пожалуйста, выберите месяц');
+      return;
+    }
+
+    // Предотвращаем множественные одновременные запросы
+    if (isFetchingRef.current) {
+      return;
+    }
+
+    isFetchingRef.current = true;
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Парсим выбранный месяц (формат: YYYY-MM)
+      const [year, month] = selectedMonth.split('-').map(Number);
+      const monthStart = getMonthStart(year, month - 1);
+      const monthEnd = getMonthEnd(year, month - 1);
+      
+      const formattedStartDate = formatDateForAPI(monthStart);
+      const formattedEndDate = formatDateForAPI(monthEnd);
+      
+      const token = getCookie('rb_admin_token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      
+      const params = new URLSearchParams();
+      params.append('date_start', formattedStartDate);
+      params.append('date_end', formattedEndDate);
+      if (checked !== 'All') {
+        params.append('checked', checked.toLowerCase());
       }
-    };
-    fetchStats();
-  }, [appliedFilters]);
-
-  const handleRefresh = () => {
-    setAppliedFilters({ ...filters });
+      
+      const url = `https://209.38.246.190/api/v1/chat/statistics?${params.toString()}`;
+      
+      const res = await fetch(url, {
+        method: 'GET',
+        headers
+      });
+      
+      if (!res.ok) throw new Error(`Ошибка ${res.status}`);
+      const json = await res.json();
+      setStats(json);
+    } catch (e) {
+      setError(e.message);
+      setStats(null);
+      Notify.failure('Ошибка при загрузке статистики');
+    } finally {
+      setLoading(false);
+      isFetchingRef.current = false;
+    }
   };
 
-  const handleApplyFilters = () => {
-    setAppliedFilters({ ...filters });
-  };
+  // Автоматическая загрузка данных при монтировании
+  useEffect(() => {
+    if (selectedMonth && !hasLoadedRef.current) {
+      hasLoadedRef.current = true;
+      previousMonthRef.current = selectedMonth;
+      fetchStats();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Выполняется только при монтировании
 
-  const handleClearFilters = () => {
-    const cleared = {
-      id: '',
-      checked: 'false',
-      date_start: '',
-      date_end: ''
-    };
-    setFilters(cleared);
-    setAppliedFilters(cleared);
-  };
+  // Автоматическая загрузка данных при изменении месяца
+  useEffect(() => {
+    if (selectedMonth && hasLoadedRef.current && previousMonthRef.current !== selectedMonth) {
+      previousMonthRef.current = selectedMonth;
+      fetchStats();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedMonth]);
+
+  // Автоматическая загрузка данных при изменении checked
+  useEffect(() => {
+    if (hasLoadedRef.current) {
+      fetchStats();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checked]);
+
 
   const getScoreLevel = (score) => {
     if (score >= 80) return 'good';
@@ -429,68 +554,30 @@ export const StatisticsPage = () => {
         <PageContent>
           <HeaderSection theme={theme}>
             <Title theme={theme}>Statistics</Title>
-            <ButtonsGroup>
-              <Button theme={theme} onClick={handleRefresh}>
-                Refresh
-              </Button>
-              <Button 
-                theme={theme} 
-                onClick={() => setIsFiltersVisible(!isFiltersVisible)}
-                title={isFiltersVisible ? 'Скрыть фильтры' : 'Показать фильтры'}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <FilterSelect
+                theme={theme}
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
               >
-                Filters
-              </Button>
-            </ButtonsGroup>
+                {months.map((month) => (
+                  <option key={month.value} value={month.value}>
+                    {month.label}
+                  </option>
+                ))}
+              </FilterSelect>
+              <FilterSelect
+                theme={theme}
+                value={checked}
+                onChange={(e) => setChecked(e.target.value)}
+              >
+                <option value="All">All</option>
+                <option value="True">True</option>
+                <option value="False">False</option>
+              </FilterSelect>
+            </div>
           </HeaderSection>
 
-          <FiltersContainer theme={theme} $isVisible={isFiltersVisible}>
-            <FilterGroup>
-              <FilterLabel theme={theme}>ID (Agent)</FilterLabel>
-              <Input
-                theme={theme}
-                type="text"
-                placeholder="UUID агента"
-                value={filters.id}
-                onChange={(e) => setFilters(prev => ({ ...prev, id: e.target.value }))}
-              />
-            </FilterGroup>
-            <FilterGroup>
-              <FilterLabel theme={theme}>Checked</FilterLabel>
-              <Select
-                theme={theme}
-                value={filters.checked}
-                onChange={(e) => setFilters(prev => ({ ...prev, checked: e.target.value }))}
-              >
-                <option value="false">Not Checked</option>
-                <option value="true">Checked</option>
-                <option value="">All</option>
-              </Select>
-            </FilterGroup>
-            <FilterGroup>
-              <FilterLabel theme={theme}>Date Start</FilterLabel>
-              <DateTimePicker
-                value={filters.date_start}
-                onChange={(e) => setFilters(prev => ({ ...prev, date_start: e.target.value }))}
-                placeholder="Выберите дату начала"
-              />
-            </FilterGroup>
-            <FilterGroup>
-              <FilterLabel theme={theme}>Date End</FilterLabel>
-              <DateTimePicker
-                value={filters.date_end}
-                onChange={(e) => setFilters(prev => ({ ...prev, date_end: e.target.value }))}
-                placeholder="Выберите дату окончания"
-              />
-            </FilterGroup>
-            <FilterButtons>
-              <Button theme={theme} $primary onClick={handleApplyFilters}>
-                Применить
-              </Button>
-              <Button theme={theme} onClick={handleClearFilters}>
-                Очистить
-              </Button>
-            </FilterButtons>
-          </FiltersContainer>
 
           <ContentContainer theme={theme}>
             {error && <ErrorBlock>{error}</ErrorBlock>}

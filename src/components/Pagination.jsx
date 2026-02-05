@@ -71,17 +71,17 @@ const PaginationButton = styled.button`
     transform: none;
   }
 
-  ${({ $active }) =>
+  ${({ $active, theme }) =>
     $active &&
     `
-    background-color: ${({ theme }) => theme.colors.accent};
-    color: #FFFFFF;
-    border-color: ${({ theme }) => theme.colors.accent};
+    background-color: ${theme.colors.accent};
+    color: ${theme.colors.primary === '#0D0D0D' ? '#0D0D0D' : '#FFFFFF'};
+    border-color: ${theme.colors.accent};
     font-weight: 600;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     
     &:hover {
-      background-color: ${({ theme }) => theme.colors.accentHover || theme.colors.accent};
+      background-color: ${theme.colors.accentHover || theme.colors.accent};
       transform: translateY(-1px);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }

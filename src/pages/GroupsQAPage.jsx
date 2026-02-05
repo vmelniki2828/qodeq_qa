@@ -1652,12 +1652,10 @@ export const GroupsQAPage = () => {
       
       const json = await response.json();
       setData(json);
-      Notify.success('Данные успешно загружены');
     } catch (e) {
       const errorMessage = e.message || 'Произошла ошибка при загрузке данных';
       setError(errorMessage);
       setData(null);
-      Notify.failure(errorMessage);
     } finally {
       setLoading(false);
       isFetchingRef.current = false;
@@ -1686,7 +1684,6 @@ export const GroupsQAPage = () => {
       headsLoadedRef.current = true;
     } catch (e) {
       console.error('Ошибка при загрузке heads:', e);
-      Notify.failure('Не удалось загрузить список руководителей');
       setHeads([]);
     } finally {
       setIsLoadingHeads(false);
@@ -1727,7 +1724,6 @@ export const GroupsQAPage = () => {
       setFreeAgents(Array.isArray(json) ? json : []);
     } catch (e) {
       console.error('Ошибка при загрузке свободных агентов:', e);
-      Notify.failure('Не удалось загрузить список свободных агентов');
       setFreeAgents([]);
     } finally {
       setIsLoadingAgents(false);
@@ -1939,7 +1935,6 @@ export const GroupsQAPage = () => {
       });
     } catch (e) {
       const errorMessage = e.message || 'Произошла ошибка при загрузке деталей группы';
-      Notify.failure(errorMessage);
       setGroupDetails(null);
     } finally {
       setIsLoadingDetails(false);

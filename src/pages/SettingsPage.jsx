@@ -214,6 +214,34 @@ const SaveLimitButton = styled.button`
   }
 `;
 
+const ToggleGroup = styled.div`
+  display: flex;
+  gap: 8px;
+  align-items: center;
+`;
+
+const ToggleBtn = styled.button`
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  background-color: ${({ theme, $active }) => ($active ? theme.colors.accent : theme.colors.background)};
+  color: ${({ theme, $active }) => ($active ? '#fff' : theme.colors.primary)};
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover:not(:disabled) {
+    border-color: ${({ theme }) => theme.colors.accent};
+    opacity: ${({ $active }) => ($active ? 1 : 0.85)};
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
 const PromptSelect = styled.select`
   width: 100%;
   max-width: 300px;
@@ -435,7 +463,9 @@ const formatValue = (v) => {
 };
 
 // Рекурсивный вывод данных API: примитивы — карточки, объекты — секции, массивы — таблица или теги
-function renderSettingsData(data, theme, onLimitChange, limitValue, isSavingLimit, isEditingLimit, onEditLimit, onWorkingShiftChange, workingShiftValue, isSavingWorkingShift, isEditingWorkingShift, onEditWorkingShift, onMinMessagesCountChange, minMessagesCountValue, isSavingMinMessagesCount, isEditingMinMessagesCount, onEditMinMessagesCount, onPromptVersionChange, promptVersionValue, promptOptions, isLoadingPrompts, isSavingPromptVersion, isEditingPromptVersion, onEditPromptVersion, selectedLanguage, onLanguageChange) {
+const isYesValue = (v) => v === true || (typeof v === 'string' && (v === 'Да' || v.toLowerCase() === 'yes' || v.toLowerCase() === 'true'));
+
+function renderSettingsData(data, theme, onLimitChange, limitValue, isSavingLimit, isEditingLimit, onEditLimit, onWorkingShiftChange, workingShiftValue, isSavingWorkingShift, isEditingWorkingShift, onEditWorkingShift, onMinMessagesCountChange, minMessagesCountValue, isSavingMinMessagesCount, isEditingMinMessagesCount, onEditMinMessagesCount, onPromptVersionChange, promptVersionValue, promptOptions, isLoadingPrompts, isSavingPromptVersion, isEditingPromptVersion, onEditPromptVersion, selectedLanguage, onLanguageChange, onBotMessagesChange, botMessagesValue, isSavingBotMessages, isEditingBotMessages, onEditBotMessages, onFileMessagesChange, fileMessagesValue, isSavingFileMessages, isEditingFileMessages, onEditFileMessages) {
   if (data == null || (typeof data === 'object' && !Array.isArray(data) && Object.keys(data).length === 0)) {
     return <EmptyState theme={theme}>Нет данных для отображения</EmptyState>;
   }
@@ -510,9 +540,23 @@ function renderSettingsData(data, theme, onLimitChange, limitValue, isSavingLimi
                                       lowerKey === 'prompt_version_id' || 
                                       lowerKey === 'promptversion' ||
                                       (k.toLowerCase().includes('prompt') && k.toLowerCase().includes('version'));
+              const isBotMessages = lowerKey === 'bot_messages';
+              const isFileMessages = lowerKey === 'file_messages';
+              const botYes = isBotMessages && (botMessagesValue !== undefined && botMessagesValue !== null ? isYesValue(botMessagesValue) : isYesValue(v));
+              const fileYes = isFileMessages && (fileMessagesValue !== undefined && fileMessagesValue !== null ? isYesValue(fileMessagesValue) : isYesValue(v));
                
                return (
                  <InfoCard key={k} theme={theme}>
+                   {isBotMessages && onEditBotMessages && (
+                     <EditButton theme={theme} onClick={() => onEditBotMessages(!isEditingBotMessages)} title={isEditingBotMessages ? 'Отменить' : 'Редактировать'}>
+                       <HiPencil size={14} />
+                     </EditButton>
+                   )}
+                   {isFileMessages && onEditFileMessages && (
+                     <EditButton theme={theme} onClick={() => onEditFileMessages(!isEditingFileMessages)} title={isEditingFileMessages ? 'Отменить' : 'Редактировать'}>
+                       <HiPencil size={14} />
+                     </EditButton>
+                   )}
                    {isLimit && onEditLimit && (
                      <EditButton
                        theme={theme}
@@ -648,6 +692,28 @@ function renderSettingsData(data, theme, onLimitChange, limitValue, isSavingLimi
                            </>
                          )}
                        </LimitEditor>
+                     ) : isBotMessages && onBotMessagesChange && isEditingBotMessages ? (
+                       <ToggleGroup>
+                         <ToggleBtn theme={theme} $active={botYes} onClick={() => onBotMessagesChange('Да', true)} disabled={isSavingBotMessages}>
+                           Да
+                         </ToggleBtn>
+                         <ToggleBtn theme={theme} $active={!botYes} onClick={() => onBotMessagesChange('Нет', true)} disabled={isSavingBotMessages}>
+                           Нет
+                         </ToggleBtn>
+                       </ToggleGroup>
+                     ) : isBotMessages ? (
+                       formatValue(v)
+                     ) : isFileMessages && onFileMessagesChange && isEditingFileMessages ? (
+                       <ToggleGroup>
+                         <ToggleBtn theme={theme} $active={fileYes} onClick={() => onFileMessagesChange('Да', true)} disabled={isSavingFileMessages}>
+                           Да
+                         </ToggleBtn>
+                         <ToggleBtn theme={theme} $active={!fileYes} onClick={() => onFileMessagesChange('Нет', true)} disabled={isSavingFileMessages}>
+                           Нет
+                         </ToggleBtn>
+                       </ToggleGroup>
+                     ) : isFileMessages ? (
+                       formatValue(v)
                      ) : (
                        formatValue(v)
                      )}
@@ -724,7 +790,7 @@ function renderSettingsData(data, theme, onLimitChange, limitValue, isSavingLimi
                     )}
                   </div>
                 ) : null}
-                {!isEditingPromptVersion && renderSettingsData(v, theme, onLimitChange, limitValue, isSavingLimit, isEditingLimit, onEditLimit, onWorkingShiftChange, workingShiftValue, isSavingWorkingShift, isEditingWorkingShift, onEditWorkingShift, onMinMessagesCountChange, minMessagesCountValue, isSavingMinMessagesCount, isEditingMinMessagesCount, onEditMinMessagesCount, onPromptVersionChange, promptVersionValue, promptOptions, isLoadingPrompts, isSavingPromptVersion, isEditingPromptVersion, onEditPromptVersion, selectedLanguage, onLanguageChange)}
+                {!isEditingPromptVersion && renderSettingsData(v, theme, onLimitChange, limitValue, isSavingLimit, isEditingLimit, onEditLimit, onWorkingShiftChange, workingShiftValue, isSavingWorkingShift, isEditingWorkingShift, onEditWorkingShift, onMinMessagesCountChange, minMessagesCountValue, isSavingMinMessagesCount, isEditingMinMessagesCount, onEditMinMessagesCount, onPromptVersionChange, promptVersionValue, promptOptions, isLoadingPrompts, isSavingPromptVersion, isEditingPromptVersion, onEditPromptVersion, selectedLanguage, onLanguageChange, onBotMessagesChange, botMessagesValue, isSavingBotMessages, isEditingBotMessages, onEditBotMessages, onFileMessagesChange, fileMessagesValue, isSavingFileMessages, isEditingFileMessages, onEditFileMessages)}
               </SectionContent>
             </DashboardSection>
           );
@@ -759,6 +825,12 @@ export const SettingsPage = () => {
   const [isSavingPromptVersion, setIsSavingPromptVersion] = useState(false);
   const [isEditingPromptVersion, setIsEditingPromptVersion] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('');
+  const [botMessagesValue, setBotMessagesValue] = useState('');
+  const [fileMessagesValue, setFileMessagesValue] = useState('');
+  const [isSavingBotMessages, setIsSavingBotMessages] = useState(false);
+  const [isSavingFileMessages, setIsSavingFileMessages] = useState(false);
+  const [isEditingBotMessages, setIsEditingBotMessages] = useState(false);
+  const [isEditingFileMessages, setIsEditingFileMessages] = useState(false);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -781,9 +853,15 @@ export const SettingsPage = () => {
         }
 
         const data = await response.json();
+        if (data && typeof data === 'object') {
+          if (data.bot_messages === undefined) data.bot_messages = 'Нет';
+          if (data.file_messages === undefined) data.file_messages = 'Нет';
+        }
         setSettingsData(data);
          // Устанавливаем начальные значения
          if (data && typeof data === 'object') {
+           if ('bot_messages' in data) setBotMessagesValue(isYesValue(data.bot_messages) ? 'Да' : 'Нет');
+           if ('file_messages' in data) setFileMessagesValue(isYesValue(data.file_messages) ? 'Да' : 'Нет');
            if ('limit' in data) {
              setLimitValue(data.limit);
            }
@@ -823,6 +901,8 @@ export const SettingsPage = () => {
          setIsEditingWorkingShift(false);
          setIsEditingMinMessagesCount(false);
          setIsEditingPromptVersion(false);
+         setIsEditingBotMessages(false);
+         setIsEditingFileMessages(false);
       } catch (error) {
         console.error('Ошибка при загрузке настроек:', error);
         Notify.failure('Произошла ошибка при загрузке настроек');
@@ -1144,6 +1224,80 @@ export const SettingsPage = () => {
     }
   };
 
+  const handleBotMessagesChange = async (newValue, shouldSave = false) => {
+    const displayValue = newValue === 'Да' ? 'Да' : 'Нет';
+    const boolValue = newValue === 'Да';
+    setBotMessagesValue(displayValue);
+    if (!shouldSave) return;
+    setIsSavingBotMessages(true);
+    try {
+      const response = await apiFetch('/api/v1/settings/main/', {
+        method: 'PATCH',
+        body: JSON.stringify({ bot_messages: boolValue }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        Notify.failure(errorData.message || `Ошибка сохранения: ${response.status}`);
+        if (settingsData && typeof settingsData === 'object' && 'bot_messages' in settingsData) {
+          setBotMessagesValue(isYesValue(settingsData.bot_messages) ? 'Да' : 'Нет');
+        }
+        return;
+      }
+      const updatedData = await response.json();
+      if (settingsData && typeof settingsData === 'object') {
+        setSettingsData({ ...settingsData, ...updatedData, bot_messages: updatedData.bot_messages !== undefined ? updatedData.bot_messages : boolValue });
+      }
+      setBotMessagesValue(updatedData.bot_messages !== undefined ? (isYesValue(updatedData.bot_messages) ? 'Да' : 'Нет') : displayValue);
+      setIsEditingBotMessages(false);
+      Notify.success('Bot messages обновлены');
+    } catch (e) {
+      console.error('Ошибка при сохранении bot_messages:', e);
+      Notify.failure('Ошибка при сохранении');
+      if (settingsData && typeof settingsData === 'object' && 'bot_messages' in settingsData) {
+        setBotMessagesValue(isYesValue(settingsData.bot_messages) ? 'Да' : 'Нет');
+      }
+    } finally {
+      setIsSavingBotMessages(false);
+    }
+  };
+
+  const handleFileMessagesChange = async (newValue, shouldSave = false) => {
+    const displayValue = newValue === 'Да' ? 'Да' : 'Нет';
+    const boolValue = newValue === 'Да';
+    setFileMessagesValue(displayValue);
+    if (!shouldSave) return;
+    setIsSavingFileMessages(true);
+    try {
+      const response = await apiFetch('/api/v1/settings/main/', {
+        method: 'PATCH',
+        body: JSON.stringify({ file_messages: boolValue }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        Notify.failure(errorData.message || `Ошибка сохранения: ${response.status}`);
+        if (settingsData && typeof settingsData === 'object' && 'file_messages' in settingsData) {
+          setFileMessagesValue(isYesValue(settingsData.file_messages) ? 'Да' : 'Нет');
+        }
+        return;
+      }
+      const updatedData = await response.json();
+      if (settingsData && typeof settingsData === 'object') {
+        setSettingsData({ ...settingsData, ...updatedData, file_messages: updatedData.file_messages !== undefined ? updatedData.file_messages : boolValue });
+      }
+      setFileMessagesValue(updatedData.file_messages !== undefined ? (isYesValue(updatedData.file_messages) ? 'Да' : 'Нет') : displayValue);
+      setIsEditingFileMessages(false);
+      Notify.success('File messages обновлены');
+    } catch (e) {
+      console.error('Ошибка при сохранении file_messages:', e);
+      Notify.failure('Ошибка при сохранении');
+      if (settingsData && typeof settingsData === 'object' && 'file_messages' in settingsData) {
+        setFileMessagesValue(isYesValue(settingsData.file_messages) ? 'Да' : 'Нет');
+      }
+    } finally {
+      setIsSavingFileMessages(false);
+    }
+  };
+
   const refreshSettingsData = async () => {
     try {
       const refreshResponse = await apiFetch('/api/v1/settings/main/', {
@@ -1154,6 +1308,8 @@ export const SettingsPage = () => {
         const fullData = await refreshResponse.json();
         setSettingsData(fullData);
         if (fullData && typeof fullData === 'object') {
+          if ('bot_messages' in fullData) setBotMessagesValue(isYesValue(fullData.bot_messages) ? 'Да' : 'Нет');
+          if ('file_messages' in fullData) setFileMessagesValue(isYesValue(fullData.file_messages) ? 'Да' : 'Нет');
           if ('limit' in fullData) {
             setLimitValue(fullData.limit);
           }
@@ -1233,7 +1389,17 @@ export const SettingsPage = () => {
                  isEditingPromptVersion,
                  handleEditPromptVersion,
                  selectedLanguage,
-                 handleLanguageChange
+                 handleLanguageChange,
+                 handleBotMessagesChange,
+                 botMessagesValue,
+                 isSavingBotMessages,
+                 isEditingBotMessages,
+                 setIsEditingBotMessages,
+                 handleFileMessagesChange,
+                 fileMessagesValue,
+                 isSavingFileMessages,
+                 isEditingFileMessages,
+                 setIsEditingFileMessages
                )
             ) : (
               <EmptyState theme={theme}>Нет данных для отображения</EmptyState>

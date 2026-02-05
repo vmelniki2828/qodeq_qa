@@ -56,6 +56,24 @@ const PageContent = styled.div`
   flex-direction: column;
   height: 100%;
   overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: ${({ theme }) => theme.colors.background};
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.colors.border};
+    border-radius: 4px;
+
+    &:hover {
+      background: ${({ theme }) => theme.colors.secondary};
+    }
+  }
 `;
 
 const HeaderSection = styled.div`
@@ -301,15 +319,18 @@ const MessagesList = styled.div`
   min-height: 0;
 
   &::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
   }
+
   &::-webkit-scrollbar-track {
     background: ${({ theme }) => theme.colors.background};
-    border-radius: 3px;
+    border-radius: 4px;
   }
+
   &::-webkit-scrollbar-thumb {
     background: ${({ theme }) => theme.colors.border};
-    border-radius: 3px;
+    border-radius: 4px;
+
     &:hover {
       background: ${({ theme }) => theme.colors.secondary};
     }
@@ -396,15 +417,18 @@ const ResultsList = styled.div`
   min-height: 0;
 
   &::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
   }
+
   &::-webkit-scrollbar-track {
     background: ${({ theme }) => theme.colors.background};
-    border-radius: 3px;
+    border-radius: 4px;
   }
+
   &::-webkit-scrollbar-thumb {
     background: ${({ theme }) => theme.colors.border};
-    border-radius: 3px;
+    border-radius: 4px;
+
     &:hover {
       background: ${({ theme }) => theme.colors.secondary};
     }
@@ -422,9 +446,22 @@ const OperatorHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  margin-bottom: ${({ $collapsed }) => ($collapsed ? '0' : '16px')};
+  padding-bottom: ${({ $collapsed }) => ($collapsed ? '0' : '12px')};
+  border-bottom: ${({ $collapsed, theme }) => ($collapsed ? 'none' : `1px solid ${theme.colors.border}`)};
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.15s ease;
+
+  &:hover {
+    opacity: 0.85;
+  }
+`;
+
+const OperatorHeaderRight = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
 `;
 
 const OperatorName = styled.span`
@@ -575,6 +612,43 @@ const ResultComment = styled.div`
   border-top: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
+const CommentInput = styled.textarea`
+  width: calc(100% - 16px);
+  padding: 6px 8px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 4px;
+  background: ${({ theme }) => theme.colors.background};
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 12px;
+  font-family: inherit;
+  resize: none;
+  min-height: 60px;
+  outline: none;
+  transition: border-color 0.15s ease;
+
+  &:focus {
+    border-color: ${({ theme }) => theme.colors.accent};
+  }
+
+  &::placeholder {
+    color: ${({ theme }) => theme.colors.secondary};
+    opacity: 0.6;
+  }
+`;
+
+const AgentCommentWrap = styled.div`
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
+const AgentCommentLabel = styled.div`
+  font-size: 12px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.secondary};
+  margin-bottom: 6px;
+`;
+
 const CheckButton = styled.button`
   margin-top: 20px;
   padding: 12px 24px;
@@ -654,9 +728,11 @@ export const ManualCheckPage = () => {
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
   const [expandedResults, setExpandedResults] = useState(new Set());
+  const [collapsedAgents, setCollapsedAgents] = useState(new Set());
   const [localDecisions, setLocalDecisions] = useState({});
   const [tagsSettings, setTagsSettings] = useState(null);
   const [selectedTags, setSelectedTags] = useState({});
+  const [checkComment, setCheckComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const formatDateForAPI = (dateString) => {
@@ -804,11 +880,26 @@ export const ManualCheckPage = () => {
         throw new Error(`Ошибка при обновлении ${failed.length} результатов`);
       }
 
+      // Отправляем checked и комментарий в запрос проверки /chat/reviewedchat/{id}
+      const chatId = data.id;
+      if (chatId) {
+        const comment = checkComment != null ? String(checkComment).trim() : '';
+        const reviewRes = await fetch(`https://209.38.246.190/api/v1/chat/reviewedchat/${chatId}`, {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify({ comment, checked: true })
+        });
+        if (!reviewRes.ok) {
+          throw new Error('Ошибка при сохранении проверки');
+        }
+      }
+
       Notify.success('Результаты успешно обновлены');
       
       // Очищаем локальные изменения после успешной отправки
       setLocalDecisions({});
       setSelectedTags({});
+      setCheckComment('');
       setExpandedResults(new Set());
       
       // Перезагружаем данные чата
@@ -1050,14 +1141,34 @@ export const ManualCheckPage = () => {
                         const opResults = Array.isArray(operatorData?.results) ? operatorData.results : [];
                         const opScore = operatorData?.score;
                         const opScoreLevel = opScore != null ? (opScore >= 80 ? 'good' : opScore >= 50 ? 'warn' : 'bad') : null;
-                        
+                        const isAgentCollapsed = collapsedAgents.has(operatorName);
+                        const toggleAgent = () => {
+                          setCollapsedAgents(prev => {
+                            const next = new Set(prev);
+                            if (next.has(operatorName)) next.delete(operatorName);
+                            else next.add(operatorName);
+                            return next;
+                          });
+                        };
+
                         return (
                           <OperatorBlock key={operatorName} theme={theme}>
-                            <OperatorHeader theme={theme}>
+                            <OperatorHeader
+                              theme={theme}
+                              $collapsed={isAgentCollapsed}
+                              onClick={toggleAgent}
+                            >
                               <OperatorName theme={theme}>{operatorName}</OperatorName>
-                              {opScore != null && <ScoreBadge $level={opScoreLevel}>{opScore}</ScoreBadge>}
+                              <OperatorHeaderRight>
+                                {opScore != null && <ScoreBadge $level={opScoreLevel}>{opScore}</ScoreBadge>}
+                                {isAgentCollapsed ? (
+                                  <HiChevronDown size={20} style={{ color: theme.colors.secondary, flexShrink: 0 }} />
+                                ) : (
+                                  <HiChevronUp size={20} style={{ color: theme.colors.secondary, flexShrink: 0 }} />
+                                )}
+                              </OperatorHeaderRight>
                             </OperatorHeader>
-                            {opResults.length > 0 ? (
+                            {!isAgentCollapsed && opResults.length > 0 ? (
                               opResults.map((result) => {
                                 const resultId = result.id || Math.random();
                                 const isExpanded = expandedResults.has(resultId);
@@ -1203,9 +1314,9 @@ export const ManualCheckPage = () => {
                                   </ResultItem>
                                 );
                               })
-                            ) : (
+                            ) : !isAgentCollapsed ? (
                               <EmptyState theme={theme}>Нет результатов</EmptyState>
-                            )}
+                            ) : null}
                           </OperatorBlock>
                         );
                       })}
@@ -1214,9 +1325,20 @@ export const ManualCheckPage = () => {
                     <EmptyState theme={theme}>Нет результатов</EmptyState>
                   )}
                   {Object.keys(results).length > 0 && (
-                    <CheckButton theme={theme} onClick={handleCheckResults} disabled={isSubmitting}>
-                      {isSubmitting ? 'Отправка...' : 'Проверить'}
-                    </CheckButton>
+                    <>
+                      <AgentCommentWrap theme={theme}>
+                        <AgentCommentLabel theme={theme}>Комментарий</AgentCommentLabel>
+                        <CommentInput
+                          theme={theme}
+                          placeholder="Комментарий по проверке..."
+                          value={checkComment}
+                          onChange={(e) => setCheckComment(e.target.value)}
+                        />
+                      </AgentCommentWrap>
+                      <CheckButton theme={theme} onClick={handleCheckResults} disabled={isSubmitting}>
+                        {isSubmitting ? 'Отправка...' : 'Проверить'}
+                      </CheckButton>
+                    </>
                   )}
                 </ResultsSection>
               </ResizableContainer>

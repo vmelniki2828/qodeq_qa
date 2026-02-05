@@ -1254,12 +1254,10 @@ export const GroupSupportsPage = () => {
       
       const json = await response.json();
       setData(json);
-      Notify.success('Данные успешно загружены');
     } catch (e) {
       const errorMessage = e.message || 'Произошла ошибка при загрузке данных';
       setError(errorMessage);
       setData(null);
-      Notify.failure(errorMessage);
     } finally {
       setLoading(false);
       isFetchingRef.current = false;
@@ -1295,7 +1293,6 @@ export const GroupSupportsPage = () => {
       headsLoadedRef.current = true;
     } catch (e) {
       console.error('Ошибка при загрузке heads:', e);
-      Notify.failure('Не удалось загрузить список руководителей');
       setHeads([]);
     } finally {
       setIsLoadingHeads(false);
@@ -1322,7 +1319,6 @@ export const GroupSupportsPage = () => {
       supervisorsLoadedRef.current = true;
     } catch (e) {
       console.error('Ошибка при загрузке supervisors:', e);
-      Notify.failure('Не удалось загрузить список супервайзеров');
       setSupervisors([]);
     } finally {
       setIsLoadingSupervisors(false);
@@ -1383,7 +1379,6 @@ export const GroupSupportsPage = () => {
       setGroupDetails(json);
     } catch (e) {
       const errorMessage = e.message || 'Произошла ошибка при загрузке деталей группы';
-      Notify.failure(errorMessage);
       setGroupDetails(null);
     } finally {
       setIsLoadingDetails(false);
@@ -1411,7 +1406,6 @@ export const GroupSupportsPage = () => {
       setFreeAgents(Array.isArray(json) ? json : []);
     } catch (e) {
       console.error('Ошибка при загрузке агентов:', e);
-      Notify.failure('Не удалось загрузить список агентов');
       setFreeAgents([]);
     } finally {
       setIsLoadingAgents(false);
@@ -1840,7 +1834,7 @@ export const GroupSupportsPage = () => {
     <Layout>
       <PageContent theme={theme}>
         <HeaderSection theme={theme}>
-          <Title theme={theme}>Group Supports</Title>
+          <Title theme={theme}>Groups Supports</Title>
           <ButtonsGroup>
             <CreateButton theme={theme} onClick={handleOpenCreateModal}>
               Create Group

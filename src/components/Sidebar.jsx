@@ -73,7 +73,7 @@ const menuItems = [
   { label: 'Tags', path: '/tags' },
   { label: 'Statistics', path: '/statistics' },
   { label: 'Groups QA', path: '/groups-qa' },
-  { label: 'Group Supports', path: '/group-supports' },
+  { label: 'Groups Supports', path: '/group-supports' },
   { label: 'Metrics', path: '/metrics' },
   { label: 'Settings', path: '/settings' },
 ];

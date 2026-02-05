@@ -238,7 +238,27 @@ const SaveButton = styled.button`
 const TableContainer = styled.div`
   flex: 1;
   padding: 20px;
-  overflow-x: auto;
+  min-height: 0;
+  overflow: auto;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: ${({ theme }) => theme.colors.background};
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.colors.border};
+    border-radius: 4px;
+
+    &:hover {
+      background: ${({ theme }) => theme.colors.secondary};
+    }
+  }
 `;
 
 const Table = styled.table`

@@ -133,6 +133,25 @@ const Content = styled.div`
   flex: 1;
   padding: 24px;
   overflow-y: auto;
+  min-height: 0;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: ${({ theme }) => theme.colors.background};
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.colors.border};
+    border-radius: 4px;
+
+    &:hover {
+      background: ${({ theme }) => theme.colors.secondary};
+    }
+  }
 `;
 
 const InfoGrid = styled.div`
@@ -354,15 +373,18 @@ const MessagesList = styled.div`
   min-height: 0;
 
   &::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
   }
+
   &::-webkit-scrollbar-track {
     background: ${({ theme }) => theme.colors.background};
-    border-radius: 3px;
+    border-radius: 4px;
   }
+
   &::-webkit-scrollbar-thumb {
     background: ${({ theme }) => theme.colors.border};
-    border-radius: 3px;
+    border-radius: 4px;
+
     &:hover {
       background: ${({ theme }) => theme.colors.secondary};
     }
@@ -371,16 +393,19 @@ const MessagesList = styled.div`
 
 const MessageCard = styled.div`
   padding: ${({ $isSystem }) => $isSystem ? '8px 0' : '12px 14px'};
-  background: ${({ theme, $isPrivate, $isSystem }) => {
+  background: ${({ theme, $isPrivate, $isSystem, $isBot }) => {
     if ($isSystem) return 'transparent';
+    if ($isBot) return theme.colors.primary === '#0D0D0D' ? 'rgba(59, 130, 246, 0.08)' : 'rgba(59, 130, 246, 0.06)';
     return $isPrivate ? 'rgba(254, 243, 199, 0.3)' : theme.colors.background;
   }};
   border: ${({ $isSystem }) => $isSystem ? 'none' : `1px solid ${({ theme }) => theme.colors.border}`};
   border-radius: ${({ $isSystem }) => $isSystem ? '0' : '8px'};
-  border-left: ${({ $isPrivate, $isSystem, theme }) => {
+  border-left: ${({ $isPrivate, $isSystem, $isBot, theme }) => {
     if ($isSystem) return 'none';
+    if ($isBot) return `1px solid ${theme.colors.border}`;
     return $isPrivate ? '3px solid #fde68a' : `3px solid ${theme.colors.accent}`;
   }};
+  border-right: ${({ $isBot }) => ($isBot ? '3px solid #3b82f6' : 'none')};
   max-width: ${({ $align }) => $align === 'center' ? '80%' : '70%'};
   align-self: ${({ $align }) => {
     if ($align === 'right') return 'flex-end';
@@ -440,15 +465,18 @@ const ResultsList = styled.div`
   min-height: 0;
 
   &::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
   }
+
   &::-webkit-scrollbar-track {
     background: ${({ theme }) => theme.colors.background};
-    border-radius: 3px;
+    border-radius: 4px;
   }
+
   &::-webkit-scrollbar-thumb {
     background: ${({ theme }) => theme.colors.border};
-    border-radius: 3px;
+    border-radius: 4px;
+
     &:hover {
       background: ${({ theme }) => theme.colors.secondary};
     }
@@ -466,9 +494,22 @@ const OperatorHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  margin-bottom: ${({ $collapsed }) => ($collapsed ? '0' : '16px')};
+  padding-bottom: ${({ $collapsed }) => ($collapsed ? '0' : '12px')};
+  border-bottom: ${({ $collapsed, theme }) => ($collapsed ? 'none' : `1px solid ${theme.colors.border}`)};
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.15s ease;
+
+  &:hover {
+    opacity: 0.85;
+  }
+`;
+
+const OperatorHeaderRight = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
 `;
 
 const OperatorName = styled.span`
@@ -573,8 +614,7 @@ const ResultComment = styled.div`
 `;
 
 const CommentInput = styled.textarea`
-  width: 100%;
-  margin-top: 8px;
+  width: calc(100% - 16px);
   padding: 6px 8px;
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 4px;
@@ -582,7 +622,7 @@ const CommentInput = styled.textarea`
   color: ${({ theme }) => theme.colors.primary};
   font-size: 12px;
   font-family: inherit;
-  resize: vertical;
+  resize: none;
   min-height: 60px;
   outline: none;
   transition: border-color 0.15s ease;
@@ -595,6 +635,19 @@ const CommentInput = styled.textarea`
     color: ${({ theme }) => theme.colors.secondary};
     opacity: 0.6;
   }
+`;
+
+const AgentCommentWrap = styled.div`
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
+const AgentCommentLabel = styled.div`
+  font-size: 12px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.secondary};
+  margin-bottom: 6px;
 `;
 
 const ErrorBlock = styled.div`
@@ -625,10 +678,12 @@ export const ChatReviewedDetailPage = () => {
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
   const [expandedResults, setExpandedResults] = useState(new Set());
+  const [collapsedAgents, setCollapsedAgents] = useState(new Set());
   const [localDecisions, setLocalDecisions] = useState({});
   const [tagsSettings, setTagsSettings] = useState(null);
   const [selectedTags, setSelectedTags] = useState({});
   const [managerComments, setManagerComments] = useState({});
+  const [checkComment, setCheckComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchChat = useCallback(async () => {
@@ -675,6 +730,60 @@ export const ChatReviewedDetailPage = () => {
     };
     fetchTagsSettings();
   }, []);
+
+  // Переключение между чатами: Ctrl + стрелка влево / вправо
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!e.ctrlKey || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
+      const tag = e.target.tagName.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
+      e.preventDefault();
+      const listRaw = sessionStorage.getItem('chatsNavigationIds');
+      if (!listRaw) return;
+      let list;
+      try {
+        list = JSON.parse(listRaw);
+      } catch (_) {
+        return;
+      }
+      if (!Array.isArray(list) || list.length === 0) return;
+      const idx = list.indexOf(id);
+      if (idx < 0) return;
+      if (e.key === 'ArrowLeft' && idx > 0) {
+        navigate(`/chats/${list[idx - 1]}`, { replace: false });
+      } else if (e.key === 'ArrowRight' && idx < list.length - 1) {
+        navigate(`/chats/${list[idx + 1]}`, { replace: false });
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [id, navigate]);
+
+  // Переключение вкладок: Ctrl+, — общая информация, Ctrl+. — Чат и результаты
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const isPrev = e.ctrlKey && e.code === 'Comma';   // Ctrl + ,
+      const isNext = e.ctrlKey && e.code === 'Period';  // Ctrl + .
+      if (!isPrev && !isNext) return;
+      const tag = e.target.tagName.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
+      e.preventDefault();
+      setActiveTab(isNext ? 'chat' : 'info');
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Escape — возврат к общему списку чатов
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      navigate('/chats');
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigate]);
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -799,12 +908,24 @@ export const ChatReviewedDetailPage = () => {
         throw new Error(`Ошибка при обновлении ${failed.length} результатов`);
       }
 
+      // Отправляем checked и комментарий в запрос проверки /chat/reviewedchat/{id}
+      const comment = checkComment != null ? String(checkComment).trim() : '';
+      const reviewRes = await fetch(`https://209.38.246.190/api/v1/chat/reviewedchat/${id}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ comment, checked: true })
+      });
+      if (!reviewRes.ok) {
+        throw new Error('Ошибка при сохранении проверки');
+      }
+
       Notify.success('Результаты успешно обновлены');
       
       // Очищаем локальные изменения после успешной отправки
       setLocalDecisions({});
       setSelectedTags({});
       setManagerComments({});
+      setCheckComment('');
       setExpandedResults(new Set());
       
       // Перезагружаем данные чата
@@ -833,7 +954,7 @@ export const ChatReviewedDetailPage = () => {
               <HiArrowLeft size={18} />
               Назад
             </BackBtn>
-            <Title theme={theme}>{d.chat_id || d.project_title || `Чат ${id || ''}`}</Title>
+            <Title theme={theme}>{d.chat_id || d.project_title || '—'}</Title>
           </HeaderLeft>
           {!loading && !error && data && (
             <Tabs>
@@ -911,6 +1032,10 @@ export const ChatReviewedDetailPage = () => {
                             </>
                           )}
                         </InfoValue>
+                      </InfoItem>
+                      <InfoItem>
+                        <InfoLabel theme={theme}>Checked by</InfoLabel>
+                        <InfoValue theme={theme}>{d.checked_by || '—'}</InfoValue>
                       </InfoItem>
                       <InfoItem>
                         <InfoLabel theme={theme}>Score</InfoLabel>
@@ -1000,14 +1125,15 @@ export const ChatReviewedDetailPage = () => {
                       {messages.map((msg, idx) => {
                         const authorType = msg.author?.type;
                         const isSystem = !msg.author || authorType === 'system';
+                        const isBot = authorType === 'bot';
                         let align = 'left';
                         if (isSystem) {
                           align = 'center';
-                        } else if (authorType === 'agent') {
+                        } else if (authorType === 'agent' || isBot) {
                           align = 'right';
                         }
                         return (
-                          <MessageCard key={idx} theme={theme} $isPrivate={msg.is_private} $isSystem={isSystem} $align={align}>
+                          <MessageCard key={idx} theme={theme} $isPrivate={msg.is_private} $isSystem={isSystem} $isBot={isBot} $align={align}>
                             {!isSystem && (
                               <MessageHeader>
                                 <MessageAuthor>
@@ -1045,13 +1171,34 @@ export const ChatReviewedDetailPage = () => {
                         const opScore = operatorData?.score;
                         const opScoreLevel = opScore != null ? (opScore >= 80 ? 'good' : opScore >= 50 ? 'warn' : 'bad') : null;
                         
+                        const isAgentCollapsed = collapsedAgents.has(operatorName);
+                        const toggleAgent = () => {
+                          setCollapsedAgents(prev => {
+                            const next = new Set(prev);
+                            if (next.has(operatorName)) next.delete(operatorName);
+                            else next.add(operatorName);
+                            return next;
+                          });
+                        };
+
                         return (
                           <OperatorBlock key={operatorName} theme={theme}>
-                            <OperatorHeader theme={theme}>
+                            <OperatorHeader
+                              theme={theme}
+                              $collapsed={isAgentCollapsed}
+                              onClick={toggleAgent}
+                            >
                               <OperatorName theme={theme}>{operatorName}</OperatorName>
-                              {opScore != null && <ScoreBadge $level={opScoreLevel}>{opScore}</ScoreBadge>}
+                              <OperatorHeaderRight>
+                                {opScore != null && <ScoreBadge $level={opScoreLevel}>{opScore}</ScoreBadge>}
+                                {isAgentCollapsed ? (
+                                  <HiChevronDown size={20} style={{ color: theme.colors.secondary, flexShrink: 0 }} />
+                                ) : (
+                                  <HiChevronUp size={20} style={{ color: theme.colors.secondary, flexShrink: 0 }} />
+                                )}
+                              </OperatorHeaderRight>
                             </OperatorHeader>
-                            {opResults.length > 0 ? (
+                            {!isAgentCollapsed && (opResults.length > 0 ? (
                               opResults.map((result) => {
                                 const resultId = result.id || Math.random();
                                 const resultIdKey = `${resultId}`;
@@ -1203,7 +1350,7 @@ export const ChatReviewedDetailPage = () => {
                               })
                             ) : (
                               <EmptyState theme={theme} style={{ padding: 20 }}>Нет результатов</EmptyState>
-                            )}
+                            ))}
                           </OperatorBlock>
                         );
                       })}
@@ -1212,9 +1359,20 @@ export const ChatReviewedDetailPage = () => {
                     <EmptyState theme={theme}>Нет результатов</EmptyState>
                   )}
                   {Object.keys(results).length > 0 && (
-                    <CheckButton theme={theme} onClick={handleCheckResults} disabled={isSubmitting}>
+                    <>
+                      <AgentCommentWrap theme={theme}>
+                        <AgentCommentLabel theme={theme}>Комментарий</AgentCommentLabel>
+                        <CommentInput
+                          theme={theme}
+                          placeholder="Комментарий по проверке..."
+                          value={checkComment}
+                          onChange={(e) => setCheckComment(e.target.value)}
+                        />
+                      </AgentCommentWrap>
+                      <CheckButton theme={theme} onClick={handleCheckResults} disabled={isSubmitting}>
                       {isSubmitting ? 'Отправка...' : 'Проверить'}
                     </CheckButton>
+                    </>
                   )}
                 </ResultsSection>
               </ResizableContainer>

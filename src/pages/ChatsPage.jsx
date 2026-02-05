@@ -90,7 +90,27 @@ const LeftPanel = styled.div`
 const TableContainer = styled.div`
   flex: 1;
   padding: 20px;
-  overflow-x: auto;
+  min-height: 0;
+  overflow: auto;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: ${({ theme }) => theme.colors.background};
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.colors.border};
+    border-radius: 4px;
+
+    &:hover {
+      background: ${({ theme }) => theme.colors.secondary};
+    }
+  }
 `;
 
 const Table = styled.table`
@@ -318,6 +338,7 @@ export const ChatsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [projects, setProjects] = useState([]);
   const [filters, setFilters] = useState({
+    chat_id: '',
     user_type: '',
     chat_color: '',
     project_id: '',
@@ -327,6 +348,7 @@ export const ChatsPage = () => {
     checked: ''
   });
   const [appliedFilters, setAppliedFilters] = useState({
+    chat_id: '',
     user_type: '',
     chat_color: '',
     project_id: '',
@@ -353,6 +375,7 @@ export const ChatsPage = () => {
       const params = new URLSearchParams();
       params.append('page', currentPage.toString());
       params.append('page_size', pageSize.toString());
+      if (appliedFilters.chat_id) params.append('chat_id', appliedFilters.chat_id.trim());
       if (appliedFilters.user_type) params.append('user_type', appliedFilters.user_type);
       if (appliedFilters.chat_color) params.append('chat_color', appliedFilters.chat_color);
       if (appliedFilters.project_id) params.append('project_id', appliedFilters.project_id);
@@ -413,6 +436,9 @@ export const ChatsPage = () => {
       }));
 
       setChats(formattedChats);
+      try {
+        sessionStorage.setItem('chatsNavigationIds', JSON.stringify(formattedChats.map((c) => c.id)));
+      } catch (_) {}
     } catch (err) {
       console.error('Ошибка при загрузке chats:', err);
       setChats([]);
@@ -460,6 +486,7 @@ export const ChatsPage = () => {
 
   const handleClearFilters = () => {
     const defaultFilters = {
+      chat_id: '',
       user_type: '',
       chat_color: '',
       project_id: '',
@@ -532,6 +559,16 @@ export const ChatsPage = () => {
           </HeaderSection>
 
           <FiltersContainer theme={theme} $isVisible={isFiltersVisible}>
+            <FilterGroup>
+              <FilterLabelStyled theme={theme}>Chat ID</FilterLabelStyled>
+              <Input
+                theme={theme}
+                type="text"
+                placeholder="Поиск по chat_id"
+                value={filters.chat_id}
+                onChange={(e) => setFilters(prev => ({ ...prev, chat_id: e.target.value }))}
+              />
+            </FilterGroup>
             <FilterGroup>
               <FilterLabelStyled theme={theme}>User Type</FilterLabelStyled>
               <Select

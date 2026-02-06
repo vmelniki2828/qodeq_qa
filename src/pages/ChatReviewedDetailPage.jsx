@@ -709,7 +709,7 @@ export const ChatReviewedDetailPage = () => {
       const token = getCookie('rb_admin_token');
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
-      const res = await fetch(`https://209.38.246.190/api/v1/chat/reviewedchat/${id}`, { method: 'GET', headers });
+      const res = await fetch(`https://qa.qodeq.net/api/v1/chat/reviewedchat/${id}`, { method: 'GET', headers });
       if (!res.ok) throw new Error(res.status === 404 ? 'Чат не найден' : `Ошибка ${res.status}`);
       const json = await res.json();
       setData(json.chat || json);
@@ -731,7 +731,7 @@ export const ChatReviewedDetailPage = () => {
         const token = getCookie('rb_admin_token');
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
-        const res = await fetch('https://209.38.246.190/api/v1/settings/tags/', { method: 'GET', headers });
+        const res = await fetch('https://qa.qodeq.net/api/v1/settings/tags/', { method: 'GET', headers });
         if (!res.ok) throw new Error(`Ошибка ${res.status}`);
         const json = await res.json();
         setTagsSettings(json);
@@ -905,7 +905,7 @@ export const ChatReviewedDetailPage = () => {
 
       // Отправляем запросы для каждого измененного результата
       const updatePromises = resultsToUpdate.map(({ resultId, updateData }) => {
-        return fetch(`https://209.38.246.190/api/v1/chat/result/${resultId}`, {
+        return fetch(`https://qa.qodeq.net/api/v1/chat/result/${resultId}`, {
           method: 'PATCH',
           headers,
           body: JSON.stringify(updateData)
@@ -922,7 +922,7 @@ export const ChatReviewedDetailPage = () => {
 
       // Отправляем checked и комментарий в запрос проверки /chat/reviewedchat/{id}
       const comment = checkComment != null ? String(checkComment).trim() : '';
-      const reviewRes = await fetch(`https://209.38.246.190/api/v1/chat/reviewedchat/${id}`, {
+      const reviewRes = await fetch(`https://qa.qodeq.net/api/v1/chat/reviewedchat/${id}`, {
         method: 'PATCH',
         headers,
         body: JSON.stringify({ comment, checked: true })

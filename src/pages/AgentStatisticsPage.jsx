@@ -545,7 +545,7 @@ export const AgentStatisticsPage = () => {
         params.append('checked', checked.toLowerCase());
       }
       
-      const url = `https://209.38.246.190/api/v1/chat/statistics?${params.toString()}`;
+      const url = `https://qa.qodeq.net/api/v1/chat/statistics?${params.toString()}`;
       
       const res = await fetch(url, {
         method: 'GET',
@@ -593,7 +593,7 @@ export const AgentStatisticsPage = () => {
         params.append('checked', checked.toLowerCase());
       }
       
-      const url = `https://209.38.246.190/api/v1/chat/statistics/chats?${params.toString()}`;
+      const url = `https://qa.qodeq.net/api/v1/chat/statistics/chats?${params.toString()}`;
       
       const res = await fetch(url, {
         method: 'GET',

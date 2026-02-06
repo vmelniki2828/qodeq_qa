@@ -555,7 +555,7 @@ export const DashboardPage = () => {
           headers['Authorization'] = `Bearer ${token}`;
         }
 
-        const response = await fetch('https://209.38.246.190/api/v1/profile/user/dashboard', {
+        const response = await fetch('https://qa.qodeq.net/api/v1/profile/user/dashboard', {
           method: 'GET',
           credentials: "include",
           headers,

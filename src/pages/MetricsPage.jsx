@@ -533,7 +533,7 @@ export const MetricsPage = () => {
           }
         }
         
-        const url = `https://209.38.246.190/api/v1/chat/statisticsmetrics${params.toString() ? '?' + params.toString() : ''}`;
+        const url = `https://qa.qodeq.net/api/v1/chat/statisticsmetrics${params.toString() ? '?' + params.toString() : ''}`;
         const res = await fetch(url, { 
           method: 'GET', 
           headers 

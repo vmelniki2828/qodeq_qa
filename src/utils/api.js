@@ -1,5 +1,5 @@
 // Базовый URL для API
-export const API_BASE_URL = 'https://209.38.246.190';
+export const API_BASE_URL = 'https://qa.qodeq.net';
 
 // Функция для получения токена из куки
 export const getCookie = (name) => {

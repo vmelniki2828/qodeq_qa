@@ -415,7 +415,7 @@ export const IntegrationsPage = () => {
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
         
-        const res = await fetch('https://209.38.246.190/api/v1/settings/integrations/', {
+        const res = await fetch('https://qa.qodeq.net/api/v1/settings/integrations/', {
           method: 'GET',
           headers
         });
@@ -478,7 +478,7 @@ export const IntegrationsPage = () => {
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
         
-        const res = await fetch('https://209.38.246.190/api/v1/settings/integrations/', {
+        const res = await fetch('https://qa.qodeq.net/api/v1/settings/integrations/', {
           method: 'GET',
           headers
         });
@@ -572,7 +572,7 @@ export const IntegrationsPage = () => {
       let url;
       
       if (integrationType === 'livechat') {
-        url = 'https://209.38.246.190/api/v1/settings/integrations/livechat';
+        url = 'https://qa.qodeq.net/api/v1/settings/integrations/livechat';
         requestBody = {
           name: createForm.name.trim(),
           type: 'livechat',
@@ -580,7 +580,7 @@ export const IntegrationsPage = () => {
           secret_key: createForm.secret_key.trim()
         };
       } else if (integrationType === 'chatwoot') {
-        url = 'https://209.38.246.190/api/v1/settings/integrations/chatwoot';
+        url = 'https://qa.qodeq.net/api/v1/settings/integrations/chatwoot';
         requestBody = {
           name: createForm.name.trim(),
           type: 'chatwoot',
@@ -647,7 +647,7 @@ export const IntegrationsPage = () => {
       if (token) headers['Authorization'] = `Bearer ${token}`;
       
       let requestBody;
-      const url = `https://209.38.246.190/api/v1/settings/integrations/${editingIntegration.id}`;
+      const url = `https://qa.qodeq.net/api/v1/settings/integrations/${editingIntegration.id}`;
       
       if (integrationType === 'livechat') {
         requestBody = {
@@ -698,7 +698,7 @@ export const IntegrationsPage = () => {
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
       
-      const res = await fetch(`https://209.38.246.190/api/v1/settings/integrations/${integration.id}`, {
+      const res = await fetch(`https://qa.qodeq.net/api/v1/settings/integrations/${integration.id}`, {
         method: 'DELETE',
         headers
       });
@@ -722,7 +722,7 @@ export const IntegrationsPage = () => {
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
       
-      const res = await fetch(`https://209.38.246.190/api/v1/settings/integrations/connection/${integration.id}`, {
+      const res = await fetch(`https://qa.qodeq.net/api/v1/settings/integrations/connection/${integration.id}`, {
         method: 'POST',
         headers
       });

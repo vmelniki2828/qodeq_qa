@@ -287,7 +287,7 @@ export const TagsPage = () => {
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
         
-        const res = await fetch('https://209.38.246.190/api/v1/settings/tags/', {
+        const res = await fetch('https://qa.qodeq.net/api/v1/settings/tags/', {
           method: 'GET',
           headers
         });
@@ -315,7 +315,7 @@ export const TagsPage = () => {
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
         
-        const res = await fetch('https://209.38.246.190/api/v1/settings/tags/', {
+        const res = await fetch('https://qa.qodeq.net/api/v1/settings/tags/', {
           method: 'GET',
           headers
         });
@@ -373,7 +373,7 @@ export const TagsPage = () => {
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
       
-      const res = await fetch(`https://209.38.246.190/api/v1/settings/tags/${tagId}`, {
+      const res = await fetch(`https://qa.qodeq.net/api/v1/settings/tags/${tagId}`, {
         method: 'PATCH',
         headers,
         body: JSON.stringify({ penalty: newPenalty })

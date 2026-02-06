@@ -155,7 +155,7 @@ export const IntegrationDetailPage = () => {
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
         
-        const res = await fetch(`https://209.38.246.190/api/v1/settings/integrations${id}`, {
+        const res = await fetch(`https://qa.qodeq.net/api/v1/settings/integrations${id}`, {
           method: 'GET',
           headers
         });

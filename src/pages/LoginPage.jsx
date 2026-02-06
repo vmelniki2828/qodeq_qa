@@ -43,7 +43,7 @@ export const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('https://209.38.246.190/api/v1/authorization/token/login', {
+      const response = await fetch('https://qa.qodeq.net/api/v1/authorization/token/login', {
         method: 'POST',
         credentials: 'include',
         withCredentials: true,
@@ -152,6 +152,7 @@ export const LoginPage = () => {
             <input
               id="email"
               type="email"
+              name="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               style={{
@@ -186,7 +187,7 @@ export const LoginPage = () => {
               id="password"
               type="password"
               name="password"
-              autoComplete="current-password"
+              autoComplete="on"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               style={{

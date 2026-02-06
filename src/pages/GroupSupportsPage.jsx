@@ -1229,7 +1229,7 @@ export const GroupSupportsPage = () => {
     setError(null);
     
     try {
-      const url = `https://209.38.246.190/api/v1/group/support/`;
+      const url = `https://qa.qodeq.net/api/v1/group/support/`;
       
       const response = await apiFetch(url, {
         method: 'GET',
@@ -1280,7 +1280,7 @@ export const GroupSupportsPage = () => {
     
     setIsLoadingHeads(true);
     try {
-      const response = await apiFetch('https://209.38.246.190/api/v1/group/support/heads/', {
+      const response = await apiFetch('https://qa.qodeq.net/api/v1/group/support/heads/', {
         method: 'GET',
       });
       
@@ -1306,7 +1306,7 @@ export const GroupSupportsPage = () => {
     
     setIsLoadingSupervisors(true);
     try {
-      const response = await apiFetch('https://209.38.246.190/api/v1/group/support/supervisors/', {
+      const response = await apiFetch('https://qa.qodeq.net/api/v1/group/support/supervisors/', {
         method: 'GET',
       });
       
@@ -1354,7 +1354,7 @@ export const GroupSupportsPage = () => {
     setGroupDetails(null);
     
     try {
-      const response = await apiFetch(`https://209.38.246.190/api/v1/group/support/${groupId}`, {
+      const response = await apiFetch(`https://qa.qodeq.net/api/v1/group/support/${groupId}`, {
         method: 'GET',
       });
       
@@ -1394,7 +1394,7 @@ export const GroupSupportsPage = () => {
   const fetchFreeAgents = async () => {
     setIsLoadingAgents(true);
     try {
-      const response = await apiFetch('https://209.38.246.190/api/v1/group/support/agent/', {
+      const response = await apiFetch('https://qa.qodeq.net/api/v1/group/support/agent/', {
         method: 'GET',
       });
       
@@ -1448,7 +1448,7 @@ export const GroupSupportsPage = () => {
     }
 
     try {
-      const response = await apiFetch(`https://209.38.246.190/api/v1/group/support/${groupId}`, {
+      const response = await apiFetch(`https://qa.qodeq.net/api/v1/group/support/${groupId}`, {
         method: 'DELETE',
       });
 
@@ -1489,7 +1489,7 @@ export const GroupSupportsPage = () => {
 
     try {
       const response = await apiFetch(
-        `https://209.38.246.190/api/v1/group/support/add-agents/?group_id=${currentGroupId}`,
+        `https://qa.qodeq.net/api/v1/group/support/add-agents/?group_id=${currentGroupId}`,
         {
           method: 'POST',
           headers: {
@@ -1532,7 +1532,7 @@ export const GroupSupportsPage = () => {
       if (currentGroupId) {
         const updateGroupDetails = async () => {
           try {
-            const response = await apiFetch(`https://209.38.246.190/api/v1/group/support/${currentGroupId}`, {
+            const response = await apiFetch(`https://qa.qodeq.net/api/v1/group/support/${currentGroupId}`, {
               method: 'GET',
             });
             if (response.ok) {
@@ -1559,7 +1559,7 @@ export const GroupSupportsPage = () => {
 
     try {
       const response = await apiFetch(
-        `https://209.38.246.190/api/v1/group/support/delete-agents/?group_id=${currentGroupId}`,
+        `https://qa.qodeq.net/api/v1/group/support/delete-agents/?group_id=${currentGroupId}`,
         {
           method: 'DELETE',
           headers: {
@@ -1633,7 +1633,7 @@ export const GroupSupportsPage = () => {
         teamlead_username: createForm.teamlead_username.trim() || ''
       };
 
-      const response = await apiFetch('https://209.38.246.190/api/v1/group/support/', {
+      const response = await apiFetch('https://qa.qodeq.net/api/v1/group/support/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

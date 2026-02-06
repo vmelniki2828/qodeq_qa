@@ -1627,7 +1627,7 @@ export const GroupsQAPage = () => {
       const formattedStartDate = formatDateForAPI(monthStart);
       const formattedEndDate = formatDateForAPI(monthEnd);
       
-      const url = `https://209.38.246.190/api/v1/group/qa/?start_date=${formattedStartDate}&end_date=${formattedEndDate}`;
+      const url = `https://qa.qodeq.net/api/v1/group/qa/?start_date=${formattedStartDate}&end_date=${formattedEndDate}`;
       
       const response = await apiFetch(url, {
         method: 'GET',
@@ -1669,7 +1669,7 @@ export const GroupsQAPage = () => {
     
     setIsLoadingHeads(true);
     try {
-      const response = await apiFetch('https://209.38.246.190/api/v1/group/qa/heads/', {
+      const response = await apiFetch('https://qa.qodeq.net/api/v1/group/qa/heads/', {
         method: 'GET',
       });
       
@@ -1712,7 +1712,7 @@ export const GroupsQAPage = () => {
   const fetchFreeAgents = async () => {
     setIsLoadingAgents(true);
     try {
-      const response = await apiFetch('https://209.38.246.190/api/v1/group/qa/agent/?free_agent=true', {
+      const response = await apiFetch('https://qa.qodeq.net/api/v1/group/qa/agent/?free_agent=true', {
         method: 'GET',
       });
       
@@ -1762,7 +1762,7 @@ export const GroupsQAPage = () => {
 
     try {
       const response = await apiFetch(
-        `https://209.38.246.190/api/v1/group/qa/add-agents/?group_id=${currentGroupId}`,
+        `https://qa.qodeq.net/api/v1/group/qa/add-agents/?group_id=${currentGroupId}`,
         {
           method: 'POST',
           headers: {
@@ -1802,7 +1802,7 @@ export const GroupsQAPage = () => {
         // Обновляем детали группы в фоне, не закрывая модальное окно выбора агентов
         const updateGroupDetails = async () => {
           try {
-            const response = await apiFetch(`https://209.38.246.190/api/v1/group/qa/${currentGroupId}`, {
+            const response = await apiFetch(`https://qa.qodeq.net/api/v1/group/qa/${currentGroupId}`, {
               method: 'GET',
             });
             if (response.ok) {
@@ -1829,7 +1829,7 @@ export const GroupsQAPage = () => {
 
     try {
       const response = await apiFetch(
-        `https://209.38.246.190/api/v1/group/qa/delete-agents/?group_id=${currentGroupId}`,
+        `https://qa.qodeq.net/api/v1/group/qa/delete-agents/?group_id=${currentGroupId}`,
         {
           method: 'DELETE',
           headers: {
@@ -1905,7 +1905,7 @@ export const GroupsQAPage = () => {
     }
     
     try {
-      const response = await apiFetch(`https://209.38.246.190/api/v1/group/qa/${groupId}`, {
+      const response = await apiFetch(`https://qa.qodeq.net/api/v1/group/qa/${groupId}`, {
         method: 'GET',
       });
       
@@ -1952,7 +1952,7 @@ export const GroupsQAPage = () => {
     
     setIsSavingDetails(true);
     try {
-      const response = await apiFetch(`https://209.38.246.190/api/v1/group/qa/${currentGroupId}`, {
+      const response = await apiFetch(`https://qa.qodeq.net/api/v1/group/qa/${currentGroupId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -2021,7 +2021,7 @@ export const GroupsQAPage = () => {
     }
 
     try {
-      const response = await apiFetch(`https://209.38.246.190/api/v1/group/qa/${groupId}`, {
+      const response = await apiFetch(`https://qa.qodeq.net/api/v1/group/qa/${groupId}`, {
         method: 'DELETE',
       });
       
@@ -2134,7 +2134,7 @@ export const GroupsQAPage = () => {
         agents: createForm.agents.filter(agent => agent && agent.trim()).map(agent => agent.trim())
       };
 
-      const response = await apiFetch('https://209.38.246.190/api/v1/group/qa/', {
+      const response = await apiFetch('https://qa.qodeq.net/api/v1/group/qa/', {
         method: 'POST',
         body: JSON.stringify(requestBody),
       });

@@ -44,12 +44,14 @@ const refreshToken = async () => {
   isRefreshing = true;
   refreshPromise = (async () => {
     try {
+      const refreshTokenFromCookie = getCookie('refresh_token');
       const response = await fetch(`${API_BASE_URL}/api/v1/authorization/token/refresh`, {
         method: 'POST',
-        credentials: 'include', // Передаем все куки (включая refresh token cookie) с запросом
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: refreshTokenFromCookie ? JSON.stringify({ refresh_token: refreshTokenFromCookie }) : undefined,
       });
 
       if (!response.ok) {

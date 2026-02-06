@@ -201,10 +201,18 @@ const InfoCardContent = styled.div`
 
 const StatusCardContent = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 24px;
   align-items: stretch;
   width: 100%;
+
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 500px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const InfoItem = styled.div`
@@ -221,6 +229,10 @@ const InfoItem = styled.div`
     background: ${({ theme }) => theme.colors.primary === '#0D0D0D' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.02)'};
     border-color: ${({ theme }) => theme.colors.accent};
   }
+`;
+
+const InfoItemFullWidth = styled(InfoItem)`
+  grid-column: 1 / -1;
 `;
 
 const InfoLabel = styled.label`
@@ -1052,6 +1064,10 @@ export const ChatReviewedDetailPage = () => {
                           </InfoValue>
                         </InfoItem>
                       )}
+                      <InfoItemFullWidth>
+                        <InfoLabel theme={theme}>Comment</InfoLabel>
+                        <InfoValue theme={theme}>{d.comment || '—'}</InfoValue>
+                      </InfoItemFullWidth>
                     </StatusCardContent>
                   </InfoCard>
 

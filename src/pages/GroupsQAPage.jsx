@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { useTheme } from '../contexts/ThemeContext';
+import { useUserProfile } from '../contexts/UserProfileContext';
 import { Layout } from '../components/Layout';
 import { Loader } from '../components/Loader';
 import { apiFetch } from '../utils/api';
@@ -1075,7 +1076,7 @@ const renderGroups = (data, theme, onGroupClick, onDeleteGroup) => {
               </GroupHead>
             </CardContent>
           </CardHeader>
-          {groupId && (
+          {groupId && onDeleteGroup && (
             <DeleteButton
               theme={theme}
               onClick={(e) => {
@@ -1118,7 +1119,7 @@ const renderGroups = (data, theme, onGroupClick, onDeleteGroup) => {
                 </GroupHead>
               </CardContent>
             </CardHeader>
-            {groupId && (
+            {groupId && onDeleteGroup && (
               <DeleteButton
                 theme={theme}
                 onClick={(e) => {
@@ -1154,7 +1155,7 @@ const renderGroups = (data, theme, onGroupClick, onDeleteGroup) => {
             </GroupHead>
           </CardContent>
         </CardHeader>
-        {groupId && (
+        {groupId && onDeleteGroup && (
           <DeleteButton
             theme={theme}
             onClick={(e) => {
@@ -1565,6 +1566,10 @@ const renderGroupDetails = (data, theme, isEditing = false, editValues = {}, onE
 
 export const GroupsQAPage = () => {
   const { theme } = useTheme();
+  const { canUseMethod } = useUserProfile();
+  const canCreateGroupQA = canUseMethod('groupsQa', 'POST');
+  const canEditGroupQA = canUseMethod('groupsQa', 'PATCH');
+  const canDeleteGroupQA = canUseMethod('groupsQa', 'DELETE');
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -2192,9 +2197,11 @@ export const GroupsQAPage = () => {
               </FilterSelect>
             </FilterGroup>
             <ButtonsGroup>
-              <CreateButton theme={theme} onClick={handleOpenCreateModal}>
-                Create Group
-              </CreateButton>
+              {canCreateGroupQA && (
+                <CreateButton theme={theme} onClick={handleOpenCreateModal}>
+                  Create Group
+                </CreateButton>
+              )}
             </ButtonsGroup>
           </div>
         </HeaderSection>
@@ -2206,7 +2213,7 @@ export const GroupsQAPage = () => {
             <EmptyState theme={theme}>Ошибка: {error}</EmptyState>
           ) : data ? (
             <DataContainer>
-              {renderGroups(data, theme, handleGroupClick, handleDeleteGroup)}
+              {renderGroups(data, theme, handleGroupClick, canDeleteGroupQA ? handleDeleteGroup : null)}
             </DataContainer>
           ) : (
             <EmptyState theme={theme}>Выберите месяц для загрузки данных</EmptyState>
@@ -2328,24 +2335,26 @@ export const GroupsQAPage = () => {
             <ModalHeader>
               <ModalTitle theme={theme}>Group Details</ModalTitle>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {!isEditingDetails ? (
-                  <EditButton theme={theme} onClick={handleEditDetails} title="Редактировать">
-                    <HiPencil size={18} />
-                  </EditButton>
-                ) : (
-                  <>
-                    <SaveButton 
-                      theme={theme} 
-                      onClick={handleSaveDetails}
-                      disabled={isSavingDetails}
-                      title="Сохранить"
-                    >
-                      <HiCheck size={18} />
-                    </SaveButton>
-                    <CloseButton theme={theme} onClick={handleCancelEdit} title="Отменить редактирование">
-                      ×
-                    </CloseButton>
-                  </>
+                {canEditGroupQA && (
+                  !isEditingDetails ? (
+                    <EditButton theme={theme} onClick={handleEditDetails} title="Редактировать">
+                      <HiPencil size={18} />
+                    </EditButton>
+                  ) : (
+                    <>
+                      <SaveButton 
+                        theme={theme} 
+                        onClick={handleSaveDetails}
+                        disabled={isSavingDetails}
+                        title="Сохранить"
+                      >
+                        <HiCheck size={18} />
+                      </SaveButton>
+                      <CloseButton theme={theme} onClick={handleCancelEdit} title="Отменить редактирование">
+                        ×
+                      </CloseButton>
+                    </>
+                  )
                 )}
                 <CloseButton theme={theme} onClick={handleCloseDetailsModal}>
                   ×

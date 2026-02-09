@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled, { ThemeProvider } from 'styled-components';
 import { useTheme } from '../contexts/ThemeContext';
+import { useUserProfile } from '../contexts/UserProfileContext';
 import { Layout } from '../components/Layout';
 import { Loader } from '../components/Loader';
 import { Pagination } from '../components/Pagination';
@@ -331,6 +332,7 @@ const Select = styled.select`
 
 export const ChatsPage = () => {
   const { theme } = useTheme();
+  const { department } = useUserProfile();
   const navigate = useNavigate();
   const [chats, setChats] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -552,9 +554,11 @@ export const ChatsPage = () => {
               >
                 Filters
               </Button>
-              <Button theme={theme} $primary onClick={() => navigate('/manual-check')}>
-                Manual
-              </Button>
+              {department === 'quality_assurance' && (
+                <Button theme={theme} $primary onClick={() => navigate('/manual-check')}>
+                  Manual
+                </Button>
+              )}
             </ButtonsGroup>
           </HeaderSection>
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { useTheme } from '../contexts/ThemeContext';
+import { useUserProfile } from '../contexts/UserProfileContext';
 import { Layout } from '../components/Layout';
 import { Loader } from '../components/Loader';
 import { apiFetch } from '../utils/api';
@@ -1115,18 +1116,18 @@ const renderGroupDetails = (data, theme, onOpenAgentModal = null, onRemoveAgent 
           <DashboardSection theme={theme}>
             <DashboardSectionTitle theme={theme}>
               {agentsPrimitive.map(([key]) => formatLabel(key))}
-              <AddAgentButtonSmall 
-                theme={theme} 
-                title="Добавить агента"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (onOpenAgentModal) {
+              {onOpenAgentModal && (
+                <AddAgentButtonSmall 
+                  theme={theme} 
+                  title="Добавить агента"
+                  onClick={(e) => {
+                    e.stopPropagation();
                     onOpenAgentModal();
-                  }
-                }}
-              >
-                <HiPlus size={18} />
-              </AddAgentButtonSmall>
+                  }}
+                >
+                  <HiPlus size={18} />
+                </AddAgentButtonSmall>
+              )}
             </DashboardSectionTitle>
             <SectionContent theme={theme}>
               {agentsPrimitive.map(([key, value]) => (
@@ -1146,18 +1147,20 @@ const renderGroupDetails = (data, theme, onOpenAgentModal = null, onRemoveAgent 
                           <AgentItemContent theme={theme}>
                             <AgentItemName theme={theme}>{agentName || formatValue(agent)}</AgentItemName>
                           </AgentItemContent>
-                          <AgentItemRemoveButton
-                            theme={theme}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (onRemoveAgent && agentId) {
-                                onRemoveAgent(agentId, agentName);
-                              }
-                            }}
-                            title="Удалить агента из группы"
-                          >
-                            <HiTrash size={18} />
-                          </AgentItemRemoveButton>
+                          {onRemoveAgent && (
+                            <AgentItemRemoveButton
+                              theme={theme}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (agentId) {
+                                  onRemoveAgent(agentId, agentName);
+                                }
+                              }}
+                              title="Удалить агента из группы"
+                            >
+                              <HiTrash size={18} />
+                            </AgentItemRemoveButton>
+                          )}
                         </AgentItem>
                       );
                     })
@@ -1187,6 +1190,10 @@ const renderGroupDetails = (data, theme, onOpenAgentModal = null, onRemoveAgent 
 
 export const GroupSupportsPage = () => {
   const { theme } = useTheme();
+  const { canUseMethod, department } = useUserProfile();
+  const canCreateGroupSupport = department !== 'support' && canUseMethod('groupsSupport', 'POST');
+  const canEditGroupSupport = department !== 'support' && (canUseMethod('groupsSupport', 'PATCH') || canUseMethod('groupsSupport', 'DELETE'));
+  const canDeleteGroupSupport = department !== 'support' && canUseMethod('groupsSupport', 'DELETE');
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -1736,18 +1743,20 @@ export const GroupSupportsPage = () => {
                           </SupervisorValue>
                         </GroupCardContent>
                         <GroupCardActions>
-                          <DeleteGroupButton
-                            theme={theme}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (groupId) {
-                                handleDeleteGroup(groupId, supervisorUsername);
-                              }
-                            }}
-                            title="Удалить группу"
-                          >
-                            <HiTrash size={18} />
-                          </DeleteGroupButton>
+                          {canDeleteGroupSupport && (
+                            <DeleteGroupButton
+                              theme={theme}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (groupId) {
+                                  handleDeleteGroup(groupId, supervisorUsername);
+                                }
+                              }}
+                              title="Удалить группу"
+                            >
+                              <HiTrash size={18} />
+                            </DeleteGroupButton>
+                          )}
                         </GroupCardActions>
                       </GroupCardWrapper>
                     </GroupCard>
@@ -1836,9 +1845,11 @@ export const GroupSupportsPage = () => {
         <HeaderSection theme={theme}>
           <Title theme={theme}>Groups Supports</Title>
           <ButtonsGroup>
-            <CreateButton theme={theme} onClick={handleOpenCreateModal}>
-              Create Group
-            </CreateButton>
+            {canCreateGroupSupport && (
+              <CreateButton theme={theme} onClick={handleOpenCreateModal}>
+                Create Group
+              </CreateButton>
+            )}
           </ButtonsGroup>
         </HeaderSection>
         <ContentWrapper theme={theme}>
@@ -1991,7 +2002,7 @@ export const GroupSupportsPage = () => {
             {isLoadingDetails ? (
               <Loader />
             ) : groupDetails ? (
-              renderGroupDetails(groupDetails, theme, handleOpenAgentModal, handleRemoveAgentFromGroup)
+              renderGroupDetails(groupDetails, theme, canEditGroupSupport ? handleOpenAgentModal : null, canEditGroupSupport ? handleRemoveAgentFromGroup : null)
             ) : (
               <EmptyState theme={theme}>Не удалось загрузить детали группы</EmptyState>
             )}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import styled, { ThemeProvider } from 'styled-components';
 import { useTheme } from '../contexts/ThemeContext';
+import { useUserProfile } from '../contexts/UserProfileContext';
 import { Layout } from '../components/Layout';
 import { Loader } from '../components/Loader';
 import { HiCheck, HiXMark, HiArrowUp, HiArrowDown, HiPencil, HiTrash } from 'react-icons/hi2';
@@ -460,6 +461,10 @@ const FilterLabel = styled.label`
 
 export const ProjectsPage = () => {
   const { theme } = useTheme();
+  const { canUseMethod } = useUserProfile();
+  const canCreateProject = canUseMethod('projects', 'POST');
+  const canEditProject = canUseMethod('projects', 'PATCH');
+  const canDeleteProject = canUseMethod('projects', 'DELETE');
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -857,9 +862,11 @@ export const ProjectsPage = () => {
               >
                 Filters
               </Button>
-              <Button theme={theme} $primary onClick={handleCreate}>
-                Create
-              </Button>
+              {canCreateProject && (
+                <Button theme={theme} $primary onClick={handleCreate}>
+                  Create
+                </Button>
+              )}
             </ButtonsGroup>
           </HeaderSection>
 
@@ -981,21 +988,25 @@ export const ProjectsPage = () => {
                                 </StatusBadge>
                               </TableCell>
                               <ActionsCell theme={theme}>
-                                <ActionButton 
-                                  theme={theme} 
-                                  onClick={(e) => handleEdit(project, e)} 
-                                  title="Редактировать"
-                                >
-                                  <HiPencil size={16} />
-                                </ActionButton>
-                                <ActionButton 
-                                  theme={theme} 
-                                  onClick={(e) => handleDelete(project, e)} 
-                                  title="Удалить"
-                                  style={{ color: '#ef4444' }}
-                                >
-                                  <HiTrash size={16} />
-                                </ActionButton>
+                                {canEditProject && (
+                                  <ActionButton 
+                                    theme={theme} 
+                                    onClick={(e) => handleEdit(project, e)} 
+                                    title="Редактировать"
+                                  >
+                                    <HiPencil size={16} />
+                                  </ActionButton>
+                                )}
+                                {canDeleteProject && (
+                                  <ActionButton 
+                                    theme={theme} 
+                                    onClick={(e) => handleDelete(project, e)} 
+                                    title="Удалить"
+                                    style={{ color: '#ef4444' }}
+                                  >
+                                    <HiTrash size={16} />
+                                  </ActionButton>
+                                )}
                               </ActionsCell>
                             </TableRow>
                           ))}

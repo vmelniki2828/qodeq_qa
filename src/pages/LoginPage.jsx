@@ -2,6 +2,7 @@ import styled from 'styled-components';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
+import { useUserProfile } from '../contexts/UserProfileContext';
 import { ToggleTheme } from '../components/ToggleTheme';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import { apiFetch, getCookie, setCookie } from '../utils/api';
@@ -30,6 +31,7 @@ export const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const { loadProfile } = useUserProfile();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -86,8 +88,8 @@ export const LoginPage = () => {
 
         if (profileResponse.ok) {
           const profileData = await profileResponse.json();
-          // Сохраняем данные профиля в localStorage
           localStorage.setItem('userProfile', JSON.stringify(profileData));
+          await loadProfile();
         }
       } catch (error) {
         console.error('Ошибка при загрузке профиля:', error);

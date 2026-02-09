@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled, { ThemeProvider } from 'styled-components';
 import { useTheme } from '../contexts/ThemeContext';
+import { useUserProfile } from '../contexts/UserProfileContext';
 import { Layout } from '../components/Layout';
 import { Loader } from '../components/Loader';
 import { DateTimePicker } from '../components/DateTimePicker';
@@ -712,6 +713,8 @@ const GetChatButton = styled.button`
 
 export const ManualCheckPage = () => {
   const { theme } = useTheme();
+  const { canUseMethod } = useUserProfile();
+  const canPatchChat = canUseMethod('chats', 'PATCH');
   const navigate = useNavigate();
   const [filters, setFilters] = useState({
     worst: false,
@@ -1324,7 +1327,7 @@ export const ManualCheckPage = () => {
                   ) : (
                     <EmptyState theme={theme}>Нет результатов</EmptyState>
                   )}
-                  {Object.keys(results).length > 0 && (
+                  {Object.keys(results).length > 0 && canPatchChat && (
                     <>
                       <AgentCommentWrap theme={theme}>
                         <AgentCommentLabel theme={theme}>Комментарий</AgentCommentLabel>

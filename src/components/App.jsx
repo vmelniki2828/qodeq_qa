@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider as StyledThemeProvider } from 'styled-components';
 import { ThemeProvider, useTheme } from '../contexts/ThemeContext';
+import { UserProfileProvider } from '../contexts/UserProfileContext';
 import { LoginPage } from '../pages/LoginPage';
 import { DashboardPage } from '../pages/DashboardPage';
 import { ChatsPage } from '../pages/ChatsPage';
@@ -60,7 +61,9 @@ const AppContent = () => {
 export const App = () => {
   return (
     <ThemeProvider>
-      <AppContent />
+      <UserProfileProvider>
+        <AppContent />
+      </UserProfileProvider>
     </ThemeProvider>
   );
 };

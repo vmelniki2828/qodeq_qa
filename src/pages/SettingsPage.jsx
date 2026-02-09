@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useTheme } from '../contexts/ThemeContext';
+import { useUserProfile } from '../contexts/UserProfileContext';
 import { Layout } from '../components/Layout';
 import { Loader } from '../components/Loader';
 import { apiFetch } from '../utils/api';
@@ -465,7 +466,7 @@ const formatValue = (v) => {
 // Рекурсивный вывод данных API: примитивы — карточки, объекты — секции, массивы — таблица или теги
 const isYesValue = (v) => v === true || (typeof v === 'string' && (v === 'Да' || v.toLowerCase() === 'yes' || v.toLowerCase() === 'true'));
 
-function renderSettingsData(data, theme, onLimitChange, limitValue, isSavingLimit, isEditingLimit, onEditLimit, onWorkingShiftChange, workingShiftValue, isSavingWorkingShift, isEditingWorkingShift, onEditWorkingShift, onMinMessagesCountChange, minMessagesCountValue, isSavingMinMessagesCount, isEditingMinMessagesCount, onEditMinMessagesCount, onPromptVersionChange, promptVersionValue, promptOptions, isLoadingPrompts, isSavingPromptVersion, isEditingPromptVersion, onEditPromptVersion, selectedLanguage, onLanguageChange, onBotMessagesChange, botMessagesValue, isSavingBotMessages, isEditingBotMessages, onEditBotMessages, onFileMessagesChange, fileMessagesValue, isSavingFileMessages, isEditingFileMessages, onEditFileMessages) {
+function renderSettingsData(data, theme, canEdit, onLimitChange, limitValue, isSavingLimit, isEditingLimit, onEditLimit, onWorkingShiftChange, workingShiftValue, isSavingWorkingShift, isEditingWorkingShift, onEditWorkingShift, onMinMessagesCountChange, minMessagesCountValue, isSavingMinMessagesCount, isEditingMinMessagesCount, onEditMinMessagesCount, onPromptVersionChange, promptVersionValue, promptOptions, isLoadingPrompts, isSavingPromptVersion, isEditingPromptVersion, onEditPromptVersion, selectedLanguage, onLanguageChange, onBotMessagesChange, botMessagesValue, isSavingBotMessages, isEditingBotMessages, onEditBotMessages, onFileMessagesChange, fileMessagesValue, isSavingFileMessages, isEditingFileMessages, onEditFileMessages) {
   if (data == null || (typeof data === 'object' && !Array.isArray(data) && Object.keys(data).length === 0)) {
     return <EmptyState theme={theme}>Нет данных для отображения</EmptyState>;
   }
@@ -547,17 +548,17 @@ function renderSettingsData(data, theme, onLimitChange, limitValue, isSavingLimi
                
                return (
                  <InfoCard key={k} theme={theme}>
-                   {isBotMessages && onEditBotMessages && (
+                   {canEdit && isBotMessages && onEditBotMessages && (
                      <EditButton theme={theme} onClick={() => onEditBotMessages(!isEditingBotMessages)} title={isEditingBotMessages ? 'Отменить' : 'Редактировать'}>
                        <HiPencil size={14} />
                      </EditButton>
                    )}
-                   {isFileMessages && onEditFileMessages && (
+                   {canEdit && isFileMessages && onEditFileMessages && (
                      <EditButton theme={theme} onClick={() => onEditFileMessages(!isEditingFileMessages)} title={isEditingFileMessages ? 'Отменить' : 'Редактировать'}>
                        <HiPencil size={14} />
                      </EditButton>
                    )}
-                   {isLimit && onEditLimit && (
+                   {canEdit && isLimit && onEditLimit && (
                      <EditButton
                        theme={theme}
                        onClick={() => onEditLimit(!isEditingLimit)}
@@ -566,7 +567,7 @@ function renderSettingsData(data, theme, onLimitChange, limitValue, isSavingLimi
                        <HiPencil size={14} />
                      </EditButton>
                    )}
-                   {isWorkingShift && onEditWorkingShift && (
+                   {canEdit && isWorkingShift && onEditWorkingShift && (
                      <EditButton
                        theme={theme}
                        onClick={() => onEditWorkingShift(!isEditingWorkingShift)}
@@ -575,7 +576,7 @@ function renderSettingsData(data, theme, onLimitChange, limitValue, isSavingLimi
                        <HiPencil size={14} />
                      </EditButton>
                    )}
-                   {isMinMessagesCount && onEditMinMessagesCount && (
+                   {canEdit && isMinMessagesCount && onEditMinMessagesCount && (
                      <EditButton
                        theme={theme}
                        onClick={() => onEditMinMessagesCount(!isEditingMinMessagesCount)}
@@ -584,7 +585,7 @@ function renderSettingsData(data, theme, onLimitChange, limitValue, isSavingLimi
                        <HiPencil size={14} />
                      </EditButton>
                    )}
-                   {isPromptVersion && onEditPromptVersion && (
+                   {canEdit && isPromptVersion && onEditPromptVersion && (
                      <EditButton
                        theme={theme}
                        onClick={() => onEditPromptVersion(!isEditingPromptVersion)}
@@ -595,7 +596,7 @@ function renderSettingsData(data, theme, onLimitChange, limitValue, isSavingLimi
                    )}
                   <InfoCardLabel theme={theme}>{formatLabel(k)}</InfoCardLabel>
                   <InfoCardValue theme={theme}>
-                    {isLimit && onLimitChange && isEditingLimit ? (
+                    {canEdit && isLimit && onLimitChange && isEditingLimit ? (
                       <LimitEditor>
                         <LimitInput
                           type="number"
@@ -616,7 +617,7 @@ function renderSettingsData(data, theme, onLimitChange, limitValue, isSavingLimi
                           <HiCheck size={16} />
                         </SaveLimitButton>
                       </LimitEditor>
-                    ) : isWorkingShift && onWorkingShiftChange && isEditingWorkingShift ? (
+                    ) : canEdit && isWorkingShift && onWorkingShiftChange && isEditingWorkingShift ? (
                       <LimitEditor>
                         <LimitInput
                           type="number"
@@ -637,7 +638,7 @@ function renderSettingsData(data, theme, onLimitChange, limitValue, isSavingLimi
                           <HiCheck size={16} />
                         </SaveLimitButton>
                       </LimitEditor>
-                     ) : isMinMessagesCount && onMinMessagesCountChange && isEditingMinMessagesCount ? (
+                     ) : canEdit && isMinMessagesCount && onMinMessagesCountChange && isEditingMinMessagesCount ? (
                        <LimitEditor>
                          <LimitInput
                            type="number"
@@ -658,7 +659,7 @@ function renderSettingsData(data, theme, onLimitChange, limitValue, isSavingLimi
                            <HiCheck size={16} />
                          </SaveLimitButton>
                        </LimitEditor>
-                     ) : isPromptVersion && onPromptVersionChange && isEditingPromptVersion ? (
+                     ) : canEdit && isPromptVersion && onPromptVersionChange && isEditingPromptVersion ? (
                        <LimitEditor>
                          {isLoadingPrompts ? (
                            <span style={{ fontSize: '14px', color: theme.colors.secondary }}>Загрузка...</span>
@@ -692,7 +693,7 @@ function renderSettingsData(data, theme, onLimitChange, limitValue, isSavingLimi
                            </>
                          )}
                        </LimitEditor>
-                     ) : isBotMessages && onBotMessagesChange && isEditingBotMessages ? (
+                     ) : canEdit && isBotMessages && onBotMessagesChange && isEditingBotMessages ? (
                        <ToggleGroup>
                          <ToggleBtn theme={theme} $active={botYes} onClick={() => onBotMessagesChange('Да', true)} disabled={isSavingBotMessages}>
                            Да
@@ -703,7 +704,7 @@ function renderSettingsData(data, theme, onLimitChange, limitValue, isSavingLimi
                        </ToggleGroup>
                      ) : isBotMessages ? (
                        formatValue(v)
-                     ) : isFileMessages && onFileMessagesChange && isEditingFileMessages ? (
+                     ) : canEdit && isFileMessages && onFileMessagesChange && isEditingFileMessages ? (
                        <ToggleGroup>
                          <ToggleBtn theme={theme} $active={fileYes} onClick={() => onFileMessagesChange('Да', true)} disabled={isSavingFileMessages}>
                            Да
@@ -740,7 +741,7 @@ function renderSettingsData(data, theme, onLimitChange, limitValue, isSavingLimi
               <DashboardSectionTitle theme={theme}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span>{formatLabel(k)}</span>
-                  {isPromptVersion && onEditPromptVersion && (
+                  {canEdit && isPromptVersion && onEditPromptVersion && (
                     <EditButton
                       theme={theme}
                       onClick={() => onEditPromptVersion(!isEditingPromptVersion)}
@@ -753,7 +754,7 @@ function renderSettingsData(data, theme, onLimitChange, limitValue, isSavingLimi
                 </div>
               </DashboardSectionTitle>
               <SectionContent theme={theme}>
-                {isPromptVersion && onPromptVersionChange && isEditingPromptVersion ? (
+                {canEdit && isPromptVersion && onPromptVersionChange && isEditingPromptVersion ? (
                   <div style={{ marginBottom: '20px' }}>
                     {isLoadingPrompts ? (
                       <div style={{ textAlign: 'center', padding: '20px', color: theme.colors.secondary }}>
@@ -790,7 +791,7 @@ function renderSettingsData(data, theme, onLimitChange, limitValue, isSavingLimi
                     )}
                   </div>
                 ) : null}
-                {!isEditingPromptVersion && renderSettingsData(v, theme, onLimitChange, limitValue, isSavingLimit, isEditingLimit, onEditLimit, onWorkingShiftChange, workingShiftValue, isSavingWorkingShift, isEditingWorkingShift, onEditWorkingShift, onMinMessagesCountChange, minMessagesCountValue, isSavingMinMessagesCount, isEditingMinMessagesCount, onEditMinMessagesCount, onPromptVersionChange, promptVersionValue, promptOptions, isLoadingPrompts, isSavingPromptVersion, isEditingPromptVersion, onEditPromptVersion, selectedLanguage, onLanguageChange, onBotMessagesChange, botMessagesValue, isSavingBotMessages, isEditingBotMessages, onEditBotMessages, onFileMessagesChange, fileMessagesValue, isSavingFileMessages, isEditingFileMessages, onEditFileMessages)}
+                {!isEditingPromptVersion && renderSettingsData(v, theme, canEdit, onLimitChange, limitValue, isSavingLimit, isEditingLimit, onEditLimit, onWorkingShiftChange, workingShiftValue, isSavingWorkingShift, isEditingWorkingShift, onEditWorkingShift, onMinMessagesCountChange, minMessagesCountValue, isSavingMinMessagesCount, isEditingMinMessagesCount, onEditMinMessagesCount, onPromptVersionChange, promptVersionValue, promptOptions, isLoadingPrompts, isSavingPromptVersion, isEditingPromptVersion, onEditPromptVersion, selectedLanguage, onLanguageChange, onBotMessagesChange, botMessagesValue, isSavingBotMessages, isEditingBotMessages, onEditBotMessages, onFileMessagesChange, fileMessagesValue, isSavingFileMessages, isEditingFileMessages, onEditFileMessages)}
               </SectionContent>
             </DashboardSection>
           );
@@ -807,6 +808,8 @@ function renderSettingsData(data, theme, onLimitChange, limitValue, isSavingLimi
 
 export const SettingsPage = () => {
   const { theme } = useTheme();
+  const { canUseMethod } = useUserProfile();
+  const canEditSettings = canUseMethod('settings', 'PATCH');
   const [isLoading, setIsLoading] = useState(true);
   const [settingsData, setSettingsData] = useState(null);
   const [error, setError] = useState(null);
@@ -1366,6 +1369,7 @@ export const SettingsPage = () => {
                renderSettingsData(
                  settingsData, 
                  theme, 
+                 canEditSettings,
                  handleLimitChange, 
                  limitValue, 
                  isSavingLimit, 

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled, { ThemeProvider } from 'styled-components';
 import { useTheme } from '../contexts/ThemeContext';
+import { useUserProfile } from '../contexts/UserProfileContext';
 import { Layout } from '../components/Layout';
 import { Loader } from '../components/Loader';
 import { HiCheck, HiXMark, HiEye, HiPencil } from 'react-icons/hi2';
@@ -65,6 +66,8 @@ const Button = styled.button`
     border-color: ${theme.colors.accent};
 
     &:hover {
+      background-color: ${theme.colors.accent};
+      color: #FFFFFF;
       opacity: 0.9;
     }
   `}
@@ -444,6 +447,9 @@ const FilterLabel = styled.label`
 
 export const AgentsPage = () => {
   const { theme } = useTheme();
+  const { canUseMethod } = useUserProfile();
+  const canCreateAgent = canUseMethod('agents', 'POST');
+  const canEditAgent = canUseMethod('agents', 'PATCH');
   const navigate = useNavigate();
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -822,9 +828,11 @@ export const AgentsPage = () => {
               >
                 Filters
               </Button>
-              <Button theme={theme} $primary onClick={handleCreate}>
-                Create
-              </Button>
+              {canCreateAgent && (
+                <Button theme={theme} $primary onClick={handleCreate}>
+                  Create
+                </Button>
+              )}
             </ButtonsGroup>
           </HeaderSection>
 
@@ -934,13 +942,15 @@ export const AgentsPage = () => {
                                       >
                                         <HiEye size={16} />
                                       </ActionButton>
-                                      <ActionButton
-                                        theme={theme}
-                                        onClick={(e) => handleEdit(agent, e)}
-                                        title="Редактировать"
-                                      >
-                                        <HiPencil size={16} />
-                                      </ActionButton>
+                                      {canEditAgent && (
+                                        <ActionButton
+                                          theme={theme}
+                                          onClick={(e) => handleEdit(agent, e)}
+                                          title="Редактировать"
+                                        >
+                                          <HiPencil size={16} />
+                                        </ActionButton>
+                                      )}
                                     </ActionsCell>
                                   );
                                 }

@@ -1,7 +1,14 @@
 import styled from 'styled-components';
+import { useLocation, Navigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
+import { useUserProfile } from '../contexts/UserProfileContext';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
+
+const getBasePath = (pathname) => {
+  const segment = pathname.split('/').filter(Boolean)[0];
+  return segment ? `/${segment}` : pathname;
+};
 
 const LayoutContainer = styled.div`
   display: flex;
@@ -59,6 +66,12 @@ const ContentArea = styled.div`
 
 export const Layout = ({ children }) => {
   const { theme } = useTheme();
+  const { canAccessFeature } = useUserProfile();
+  const location = useLocation();
+  const basePath = getBasePath(location.pathname);
+  if (!canAccessFeature(basePath)) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return (
     <LayoutContainer theme={theme}>

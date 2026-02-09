@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled, { ThemeProvider } from 'styled-components';
 import { useTheme } from '../contexts/ThemeContext';
+import { useUserProfile } from '../contexts/UserProfileContext';
 import { Layout } from '../components/Layout';
 import { Loader } from '../components/Loader';
 import { HiCheck, HiXMark } from 'react-icons/hi2';
@@ -494,8 +495,10 @@ const ContentContainer = styled.div`
 
 export const AgentStatisticsPage = () => {
   const { theme } = useTheme();
+  const { department, role } = useUserProfile();
   const { id } = useParams();
   const navigate = useNavigate();
+  const skipStatisticsId = department === 'support' && role === 'agent';
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -514,7 +517,8 @@ export const AgentStatisticsPage = () => {
 
 
   const fetchStats = useCallback(async () => {
-    if (!id || !selectedMonth) return;
+    if (!selectedMonth) return;
+    if (!skipStatisticsId && !id) return;
     
     if (isFetchingRef.current) {
       return;
@@ -538,7 +542,7 @@ export const AgentStatisticsPage = () => {
       if (token) headers['Authorization'] = `Bearer ${token}`;
       
       const params = new URLSearchParams();
-      params.append('id', id);
+      if (!skipStatisticsId) params.append('id', id);
       params.append('date_start', formattedStartDate);
       params.append('date_end', formattedEndDate);
       if (checked !== 'All') {
@@ -563,10 +567,11 @@ export const AgentStatisticsPage = () => {
       setStatsLoading(false);
       isFetchingRef.current = false;
     }
-  }, [id, selectedMonth, checked]);
+  }, [id, selectedMonth, checked, skipStatisticsId]);
 
   const fetchChats = useCallback(async () => {
-    if (!id || !selectedMonth) return;
+    if (!selectedMonth) return;
+    if (!skipStatisticsId && !id) return;
     
     setLoading(true);
     setError(null);
@@ -584,7 +589,7 @@ export const AgentStatisticsPage = () => {
       if (token) headers['Authorization'] = `Bearer ${token}`;
       
       const params = new URLSearchParams();
-      params.append('id', id);
+      if (!skipStatisticsId) params.append('id', id);
       params.append('page', currentPage.toString());
       params.append('page_size', pageSize.toString());
       params.append('date_start', formattedStartDate);
@@ -612,11 +617,13 @@ export const AgentStatisticsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [id, currentPage, selectedMonth, checked, pageSize]);
+  }, [id, currentPage, selectedMonth, checked, pageSize, skipStatisticsId]);
+
+  const canLoadAgentStats = id || skipStatisticsId;
 
   // Автоматическая загрузка данных при монтировании
   useEffect(() => {
-    if (id && selectedMonth && !hasLoadedRef.current) {
+    if (canLoadAgentStats && selectedMonth && !hasLoadedRef.current) {
       hasLoadedRef.current = true;
       previousMonthRef.current = selectedMonth;
       fetchStats();
@@ -627,7 +634,7 @@ export const AgentStatisticsPage = () => {
 
   // Автоматическая загрузка данных при изменении месяца или checked
   useEffect(() => {
-    if (id && selectedMonth && hasLoadedRef.current) {
+    if (canLoadAgentStats && selectedMonth && hasLoadedRef.current) {
       if (previousMonthRef.current !== selectedMonth) {
         previousMonthRef.current = selectedMonth;
         setCurrentPage(1);
@@ -641,7 +648,7 @@ export const AgentStatisticsPage = () => {
 
   // Автоматическая загрузка данных при изменении pageSize
   useEffect(() => {
-    if (id && selectedMonth && hasLoadedRef.current) {
+    if (canLoadAgentStats && selectedMonth && hasLoadedRef.current) {
       setCurrentPage(1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -649,7 +656,7 @@ export const AgentStatisticsPage = () => {
 
   // Автоматическая загрузка данных при изменении страницы или pageSize
   useEffect(() => {
-    if (id && selectedMonth && hasLoadedRef.current) {
+    if (canLoadAgentStats && selectedMonth && hasLoadedRef.current) {
       fetchChats();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

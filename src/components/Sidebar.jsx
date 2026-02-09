@@ -1,5 +1,6 @@
 import styled from 'styled-components';
 import { useTheme } from '../contexts/ThemeContext';
+import { useUserProfile } from '../contexts/UserProfileContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const SidebarStyled = styled.aside`
@@ -64,7 +65,7 @@ const MenuItem = styled.div`
   }
 `;
 
-const menuItems = [
+const ALL_MENU_ITEMS = [
   { label: 'Dashboard', path: '/dashboard' },
   { label: 'Integrations', path: '/integrations' },
   { label: 'Projects', path: '/projects' },
@@ -80,12 +81,15 @@ const menuItems = [
 
 export const Sidebar = () => {
   const { theme } = useTheme();
+  const { canAccessFeature } = useUserProfile();
   const navigate = useNavigate();
   const location = useLocation();
 
   const isActive = (path) => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
+
+  const menuItems = ALL_MENU_ITEMS.filter((item) => canAccessFeature(item.path));
 
   return (
     <SidebarStyled theme={theme}>

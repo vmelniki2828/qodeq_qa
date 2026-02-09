@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { Layout } from '../components/Layout';
 import { useTheme } from '../contexts/ThemeContext';
+import { useUserProfile } from '../contexts/UserProfileContext';
 import { Loader } from '../components/Loader';
 import { HiArrowLeft, HiCheck, HiXMark, HiHashtag, HiChatBubbleLeftRight, HiUser, HiClock, HiTag, HiCube, HiChevronDown, HiChevronUp } from 'react-icons/hi2';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
@@ -682,6 +683,8 @@ export const ChatReviewedDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const { canUseMethod } = useUserProfile();
+  const canPatchChat = canUseMethod('chats', 'PATCH');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -1241,7 +1244,7 @@ export const ChatReviewedDetailPage = () => {
                                     $decision={result.decision}
                                     $localDecision={localDecisions[resultIdKey]}
                                   >
-                                    {isExpanded && (
+                                    {isExpanded && canPatchChat && (
                                       <ResultDecision theme={theme}>
                                         <DecisionToggle 
                                           theme={theme}
@@ -1295,8 +1298,8 @@ export const ChatReviewedDetailPage = () => {
                                         </div>
                                       )}
                                       
-                                      {/* Показываем доступные теги из settings, если decision = false и блок развернут */}
-                                      {isExpanded && !currentDecision && tagsSettings && Array.isArray(tagsSettings) && (() => {
+                                      {/* Показываем доступные теги из settings, если decision = false и блок развернут (только для QA — support только просмотр) */}
+                                      {isExpanded && canPatchChat && !currentDecision && tagsSettings && Array.isArray(tagsSettings) && (() => {
                                         const questionSettings = tagsSettings.find(item => item.question === result.question);
                                         if (!questionSettings || !questionSettings.tags) return null;
                                         
@@ -1374,7 +1377,7 @@ export const ChatReviewedDetailPage = () => {
                   ) : (
                     <EmptyState theme={theme}>Нет результатов</EmptyState>
                   )}
-                  {Object.keys(results).length > 0 && (
+                  {Object.keys(results).length > 0 && canPatchChat && (
                     <>
                       <AgentCommentWrap theme={theme}>
                         <AgentCommentLabel theme={theme}>Комментарий</AgentCommentLabel>

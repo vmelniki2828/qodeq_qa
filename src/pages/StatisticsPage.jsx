@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled, { ThemeProvider } from 'styled-components';
 import { useTheme } from '../contexts/ThemeContext';
+import { useUserProfile } from '../contexts/UserProfileContext';
 import { Layout } from '../components/Layout';
 import { Loader } from '../components/Loader';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
@@ -428,7 +429,9 @@ const AgentNameCell = styled(TableCell)`
 
 export const StatisticsPage = () => {
   const { theme } = useTheme();
+  const { department, role, profile } = useUserProfile();
   const navigate = useNavigate();
+  const skipStatisticsId = department === 'support' && role === 'agent';
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [stats, setStats] = useState(null);
@@ -468,6 +471,9 @@ export const StatisticsPage = () => {
       if (token) headers['Authorization'] = `Bearer ${token}`;
       
       const params = new URLSearchParams();
+      if (!skipStatisticsId && profile?.id != null) {
+        params.append('id', String(profile.id));
+      }
       params.append('date_start', formattedStartDate);
       params.append('date_end', formattedEndDate);
       if (checked !== 'All') {

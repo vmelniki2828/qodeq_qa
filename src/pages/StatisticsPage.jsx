@@ -442,6 +442,13 @@ export const StatisticsPage = () => {
   const previousMonthRef = useRef(null);
   const isFetchingRef = useRef(false);
 
+  // Редирект для агентов поддержки на их личную статистику
+  useEffect(() => {
+    if (profile && role === 'agent' && department === 'support' && profile.id) {
+      navigate(`/statistics/agent/${profile.id}`, { replace: true });
+    }
+  }, [profile, role, department, navigate]);
+
   const fetchStats = async () => {
     if (!selectedMonth) {
       Notify.warning('Пожалуйста, выберите месяц');
@@ -471,9 +478,6 @@ export const StatisticsPage = () => {
       if (token) headers['Authorization'] = `Bearer ${token}`;
       
       const params = new URLSearchParams();
-      if (!skipStatisticsId && profile?.id != null) {
-        params.append('id', String(profile.id));
-      }
       params.append('date_start', formattedStartDate);
       params.append('date_end', formattedEndDate);
       if (checked !== 'All') {

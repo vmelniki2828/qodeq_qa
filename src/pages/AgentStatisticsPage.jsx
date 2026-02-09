@@ -542,7 +542,9 @@ export const AgentStatisticsPage = () => {
       if (token) headers['Authorization'] = `Bearer ${token}`;
       
       const params = new URLSearchParams();
-      if (!skipStatisticsId) params.append('id', id);
+      if ((role === 'team_lead' || role === 'supervisor') && department === 'support' && id) {
+        params.append('id', id);
+      }
       params.append('date_start', formattedStartDate);
       params.append('date_end', formattedEndDate);
       if (checked !== 'All') {
@@ -567,7 +569,7 @@ export const AgentStatisticsPage = () => {
       setStatsLoading(false);
       isFetchingRef.current = false;
     }
-  }, [id, selectedMonth, checked, skipStatisticsId]);
+  }, [id, selectedMonth, checked, skipStatisticsId, role, department]);
 
   const fetchChats = useCallback(async () => {
     if (!selectedMonth) return;
@@ -589,7 +591,9 @@ export const AgentStatisticsPage = () => {
       if (token) headers['Authorization'] = `Bearer ${token}`;
       
       const params = new URLSearchParams();
-      if (!skipStatisticsId) params.append('id', id);
+      if ((role === 'team_lead' || role === 'supervisor') && department === 'support' && id) {
+        params.append('id', id);
+      }
       params.append('page', currentPage.toString());
       params.append('page_size', pageSize.toString());
       params.append('date_start', formattedStartDate);
@@ -617,7 +621,7 @@ export const AgentStatisticsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [id, currentPage, selectedMonth, checked, pageSize, skipStatisticsId]);
+  }, [id, currentPage, selectedMonth, checked, pageSize, skipStatisticsId, role, department]);
 
   const canLoadAgentStats = id || skipStatisticsId;
 

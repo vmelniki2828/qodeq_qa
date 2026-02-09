@@ -683,7 +683,7 @@ export const ChatReviewedDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const { canUseMethod } = useUserProfile();
+  const { canUseMethod, role, department } = useUserProfile();
   const canPatchChat = canUseMethod('chats', 'PATCH');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -729,6 +729,11 @@ export const ChatReviewedDetailPage = () => {
   }, [fetchChat]);
 
   useEffect(() => {
+    // Не делаем запрос для supervisor из support
+    if (role === 'supervisor' && department === 'support') {
+      return;
+    }
+    
     const fetchTagsSettings = async () => {
       try {
         const token = getCookie('rb_admin_token');
@@ -744,7 +749,7 @@ export const ChatReviewedDetailPage = () => {
       }
     };
     fetchTagsSettings();
-  }, []);
+  }, [role, department]);
 
   // Переключение между чатами: Ctrl + стрелка влево / вправо
   useEffect(() => {

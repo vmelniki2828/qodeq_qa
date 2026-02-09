@@ -704,10 +704,15 @@ export const MetricsPage = () => {
                                      <XAxis 
                                        dataKey={labelKey}
                                        stroke={theme.colors.secondary}
-                                       tick={{ fontSize: 11, fill: theme.colors.secondary }}
+                                       tick={{ fontSize: 10, fill: theme.colors.secondary }}
                                        angle={-45}
                                        textAnchor="end"
-                                       height={80}
+                                       height={70}
+                                       tickFormatter={(value) => {
+                                         const str = value != null ? String(value).trim() : '';
+                                         const shortened = str.replace(/\s+Casino$/i, '');
+                                         return shortened.length > 12 ? shortened.slice(0, 11) + '…' : (shortened || str);
+                                       }}
                                      />
                                     <YAxis 
                                       stroke={theme.colors.secondary}

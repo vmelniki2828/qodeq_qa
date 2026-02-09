@@ -585,7 +585,8 @@ function renderSettingsData(data, theme, canEdit, onLimitChange, limitValue, isS
                        <HiPencil size={14} />
                      </EditButton>
                    )}
-                   {canEdit && isPromptVersion && onEditPromptVersion && (
+                   {/* Закомментировано: возможность изменять Prompt version */}
+                   {/* {canEdit && isPromptVersion && onEditPromptVersion && (
                      <EditButton
                        theme={theme}
                        onClick={() => onEditPromptVersion(!isEditingPromptVersion)}
@@ -593,7 +594,7 @@ function renderSettingsData(data, theme, canEdit, onLimitChange, limitValue, isS
                      >
                        <HiPencil size={14} />
                      </EditButton>
-                   )}
+                   )} */}
                   <InfoCardLabel theme={theme}>{formatLabel(k)}</InfoCardLabel>
                   <InfoCardValue theme={theme}>
                     {canEdit && isLimit && onLimitChange && isEditingLimit ? (
@@ -659,7 +660,8 @@ function renderSettingsData(data, theme, canEdit, onLimitChange, limitValue, isS
                            <HiCheck size={16} />
                          </SaveLimitButton>
                        </LimitEditor>
-                     ) : canEdit && isPromptVersion && onPromptVersionChange && isEditingPromptVersion ? (
+                     ) : /* Закомментировано: возможность изменять Prompt version */
+                     /* canEdit && isPromptVersion && onPromptVersionChange && isEditingPromptVersion ? (
                        <LimitEditor>
                          {isLoadingPrompts ? (
                            <span style={{ fontSize: '14px', color: theme.colors.secondary }}>Загрузка...</span>
@@ -693,7 +695,8 @@ function renderSettingsData(data, theme, canEdit, onLimitChange, limitValue, isS
                            </>
                          )}
                        </LimitEditor>
-                     ) : canEdit && isBotMessages && onBotMessagesChange && isEditingBotMessages ? (
+                     ) : */
+                     canEdit && isBotMessages && onBotMessagesChange && isEditingBotMessages ? (
                        <ToggleGroup>
                          <ToggleBtn theme={theme} $active={botYes} onClick={() => onBotMessagesChange('Да', true)} disabled={isSavingBotMessages}>
                            Да
@@ -741,7 +744,8 @@ function renderSettingsData(data, theme, canEdit, onLimitChange, limitValue, isS
               <DashboardSectionTitle theme={theme}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span>{formatLabel(k)}</span>
-                  {canEdit && isPromptVersion && onEditPromptVersion && (
+                  {/* Закомментировано: возможность изменять Prompt version */}
+                  {/* {canEdit && isPromptVersion && onEditPromptVersion && (
                     <EditButton
                       theme={theme}
                       onClick={() => onEditPromptVersion(!isEditingPromptVersion)}
@@ -750,11 +754,12 @@ function renderSettingsData(data, theme, canEdit, onLimitChange, limitValue, isS
                     >
                       <HiPencil size={14} />
                     </EditButton>
-                  )}
+                  )} */}
                 </div>
               </DashboardSectionTitle>
               <SectionContent theme={theme}>
-                {canEdit && isPromptVersion && onPromptVersionChange && isEditingPromptVersion ? (
+                {/* Закомментировано: возможность изменять Prompt version */}
+                {/* {canEdit && isPromptVersion && onPromptVersionChange && isEditingPromptVersion ? (
                   <div style={{ marginBottom: '20px' }}>
                     {isLoadingPrompts ? (
                       <div style={{ textAlign: 'center', padding: '20px', color: theme.colors.secondary }}>
@@ -790,7 +795,7 @@ function renderSettingsData(data, theme, canEdit, onLimitChange, limitValue, isS
                       </div>
                     )}
                   </div>
-                ) : null}
+                ) : null} */}
                 {!isEditingPromptVersion && renderSettingsData(v, theme, canEdit, onLimitChange, limitValue, isSavingLimit, isEditingLimit, onEditLimit, onWorkingShiftChange, workingShiftValue, isSavingWorkingShift, isEditingWorkingShift, onEditWorkingShift, onMinMessagesCountChange, minMessagesCountValue, isSavingMinMessagesCount, isEditingMinMessagesCount, onEditMinMessagesCount, onPromptVersionChange, promptVersionValue, promptOptions, isLoadingPrompts, isSavingPromptVersion, isEditingPromptVersion, onEditPromptVersion, selectedLanguage, onLanguageChange, onBotMessagesChange, botMessagesValue, isSavingBotMessages, isEditingBotMessages, onEditBotMessages, onFileMessagesChange, fileMessagesValue, isSavingFileMessages, isEditingFileMessages, onEditFileMessages)}
               </SectionContent>
             </DashboardSection>

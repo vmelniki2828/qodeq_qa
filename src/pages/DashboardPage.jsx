@@ -494,8 +494,43 @@ function renderDashboardData(data, theme) {
     Object.entries(data).forEach(([k, v]) => {
       if (v === null || v === undefined) primitives.push([k, v]);
       else if (typeof v !== 'object') primitives.push([k, v]);
-      else if (Array.isArray(v)) complex.push([k, v]);
-      else complex.push([k, v]);
+      else if (Array.isArray(v)) {
+        // Не выводим пустые Integrations
+        const keyLower = k.toLowerCase();
+        if (keyLower === 'integrations' && v.length === 0) {
+          return; // Пропускаем пустые массивы
+        }
+        complex.push([k, v]);
+      } else {
+        const keyLower = k.toLowerCase();
+        // Не выводим блок Integrations, если он пустой
+        if (keyLower === 'integrations' && typeof v === 'object' && v !== null) {
+          // Проверяем, пустой ли объект
+          if (Object.keys(v).length === 0) {
+            return; // Пропускаем пустые объекты
+          }
+          // Проверяем, содержит ли объект только пустые массивы/объекты
+          const hasNonEmptyValue = Object.values(v).some(val => {
+            if (val === null || val === undefined) return false;
+            if (Array.isArray(val)) return val.length > 0;
+            if (typeof val === 'object') return Object.keys(val).length > 0;
+            return true; // Примитивные значения считаем непустыми
+          });
+          if (!hasNonEmptyValue) {
+            return; // Пропускаем, если все значения пустые
+          }
+        }
+        // Не выводим блок Settings, если Issues пустое
+        if (keyLower === 'settings' && typeof v === 'object' && v !== null) {
+          const issues = v.issues || v.Issues || v.issues_ || v.Issues_;
+          if (issues === null || issues === undefined || 
+              (Array.isArray(issues) && issues.length === 0) ||
+              (typeof issues === 'object' && Object.keys(issues).length === 0)) {
+            return; // Пропускаем Settings, если Issues пустое
+          }
+        }
+        complex.push([k, v]);
+      }
     });
     return (
       <DashboardBlock theme={theme}>

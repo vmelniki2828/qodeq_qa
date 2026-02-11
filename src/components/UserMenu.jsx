@@ -51,6 +51,10 @@ const DropdownMenu = styled.div`
   }
 `;
 
+const ProfileLinkText = styled.span`
+  color: #ACACAC;
+`;
+
 const MenuItem = styled.div`
   padding: 12px;
   border-radius: 8px;
@@ -209,6 +213,9 @@ export const UserMenu = () => {
             )}
           </UserInfo>
         )}
+        <MenuItem theme={theme} onClick={() => navigate('/profile')} role="button">
+          <ProfileLinkText>Профиль</ProfileLinkText>
+        </MenuItem>
         <MenuItem theme={theme}>
           <ThemeSection>
             <ThemeLabel theme={theme}>Тема</ThemeLabel>

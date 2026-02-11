@@ -522,10 +522,9 @@ export const AgentsPage = () => {
         if (appliedFilters.name) params.append('name', appliedFilters.name);
         if (appliedFilters.available !== '') params.append('available', appliedFilters.available);
         if (appliedFilters.integration_id) params.append('integration_id', appliedFilters.integration_id);
-        params.append('skip', '0');
-        params.append('limit', '10');
         
-        const url = `https://qa.qodeq.net/api/v1/settings/agent/?${params.toString()}`;
+        const query = params.toString();
+        const url = query ? `https://qa.qodeq.net/api/v1/settings/agent/?${query}` : 'https://qa.qodeq.net/api/v1/settings/agent/';
         
         const res = await fetch(url, {
           method: 'GET',
@@ -597,10 +596,9 @@ export const AgentsPage = () => {
         if (appliedFilters.name) params.append('name', appliedFilters.name);
         if (appliedFilters.available !== '') params.append('available', appliedFilters.available);
         if (appliedFilters.integration_id) params.append('integration_id', appliedFilters.integration_id);
-        params.append('skip', '0');
-        params.append('limit', '10');
         
-        const url = `https://qa.qodeq.net/api/v1/settings/agent/?${params.toString()}`;
+        const query = params.toString();
+        const url = query ? `https://qa.qodeq.net/api/v1/settings/agent/?${query}` : 'https://qa.qodeq.net/api/v1/settings/agent/';
         
         const res = await fetch(url, {
           method: 'GET',

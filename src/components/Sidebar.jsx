@@ -77,6 +77,7 @@ const ALL_MENU_ITEMS = [
   { label: 'Groups Supports', path: '/group-supports' },
   { label: 'Metrics', path: '/metrics' },
   { label: 'Settings', path: '/settings' },
+  { label: 'Admin', path: '/admin' },
 ];
 
 export const Sidebar = () => {

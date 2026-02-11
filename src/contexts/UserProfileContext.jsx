@@ -29,6 +29,7 @@ export const FEATURE_DEPARTMENT = {
   '/metrics': ['quality_assurance', 'support'],
   '/settings': 'quality_assurance',
   '/manual-check': 'quality_assurance',
+  '/admin': ['quality_assurance', 'support'],
 };
 
 /**
@@ -60,6 +61,10 @@ export const FEATURE_ROLES = {
     support: ['team_lead', 'head'],
   },
   '/settings': { quality_assurance: ['admin', 'team_lead', 'head'] },
+  '/admin': {
+    quality_assurance: ['admin', 'team_lead', 'head'],
+    support: ['admin', 'team_lead', 'head'],
+  },
 };
 
 /**

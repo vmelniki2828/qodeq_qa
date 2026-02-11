@@ -17,9 +17,11 @@ import { StatisticsPage } from '../pages/StatisticsPage';
 import { AgentStatisticsPage } from '../pages/AgentStatisticsPage';
 import { ManualCheckPage } from '../pages/ManualCheckPage';
 import { SettingsPage } from '../pages/SettingsPage';
+import { ProfilePage } from '../pages/ProfilePage';
 import { GroupsQAPage } from '../pages/GroupsQAPage';
 import { GroupSupportsPage } from '../pages/GroupSupportsPage';
 import { MetricsPage } from '../pages/MetricsPage';
+import { AdminPage } from '../pages/AdminPage';
 
 const AppContent = () => {
   const { theme } = useTheme();
@@ -52,6 +54,8 @@ const AppContent = () => {
           <Route path="/group-supports" element={<GroupSupportsPage />} />
           <Route path="/metrics" element={<MetricsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Routes>
       </BrowserRouter>
     </StyledThemeProvider>

@@ -21,6 +21,7 @@ import { ProfilePage } from '../pages/ProfilePage';
 import { GroupsQAPage } from '../pages/GroupsQAPage';
 import { GroupSupportsPage } from '../pages/GroupSupportsPage';
 import { MetricsPage } from '../pages/MetricsPage';
+import { StaffMetricsPage } from '../pages/StaffMetricsPage';
 import { AdminPage } from '../pages/AdminPage';
 
 const AppContent = () => {
@@ -53,6 +54,7 @@ const AppContent = () => {
           <Route path="/groups-qa" element={<GroupsQAPage />} />
           <Route path="/group-supports" element={<GroupSupportsPage />} />
           <Route path="/metrics" element={<MetricsPage />} />
+          <Route path="/staff-metrics" element={<StaffMetricsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/profile" element={<ProfilePage />} />

@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
 import { Layout } from '../components/Layout';
 import { useTheme } from '../contexts/ThemeContext';
+import { useUserProfile } from '../contexts/UserProfileContext';
 import { Loader } from '../components/Loader';
 import { DateTimePicker } from '../components/DateTimePicker';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
@@ -87,7 +89,7 @@ const HeaderSection = styled.div`
 const FiltersContainer = styled.div`
   display: flex;
   gap: 16px;
-  align-items: flex-end;
+  align-items: center;
   flex-wrap: wrap;
 `;
 
@@ -96,6 +98,39 @@ const FilterGroup = styled.div`
   flex-direction: column;
   gap: 6px;
   min-width: 180px;
+`;
+
+const FilterSelect = styled.select`
+  width: 100%;
+  padding: 6px 10px;
+  padding-right: 32px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 6px;
+  background-color: ${({ theme }) => theme.colors.background};
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+
+  &:focus {
+    border-color: ${({ theme }) => theme.colors.accent};
+  }
+
+  &::-ms-expand {
+    display: none;
+  }
+
+  option {
+    background-color: ${({ theme }) => theme.colors.background};
+    color: ${({ theme }) => theme.colors.primary};
+  }
 `;
 
 const FilterLabel = styled.label`
@@ -108,12 +143,33 @@ const FilterLabel = styled.label`
 
 const DateSeparator = styled.div`
   display: flex;
-  align-items: flex-end;
-  padding-bottom: 6px;
+  align-items: center;
   font-size: 18px;
   font-weight: 600;
   color: ${({ theme }) => theme.colors.secondary};
   margin: 0 8px;
+`;
+
+const StaffMetricsButton = styled.button`
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  background-color: ${({ theme }) => theme.colors.accent};
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+
+  &:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
 `;
 
 const Title = styled.h2`
@@ -457,11 +513,16 @@ const COLORS = ['#3B82F6', '#10A37F', '#8B5CF6', '#F59E0B', '#EF4444', '#EC4899'
 
 export const MetricsPage = () => {
   const { theme } = useTheme();
+  const { role } = useUserProfile();
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [date_start, setDateStart] = useState('');
   const [date_end, setDateEnd] = useState('');
+  const [groups, setGroups] = useState([]);
+  const [selectedGroupId, setSelectedGroupId] = useState('');
+  const [loadingGroups, setLoadingGroups] = useState(false);
 
   useEffect(() => {
     if (!data) return;
@@ -510,6 +571,59 @@ export const MetricsPage = () => {
     };
   }, [data]);
 
+  // Загрузка групп для HEAD и TEAM LEAD
+  useEffect(() => {
+    const fetchGroups = async () => {
+      if (role !== 'head' && role !== 'team_lead') {
+        return;
+      }
+      
+      setLoadingGroups(true);
+      try {
+        const token = getCookie('rb_admin_token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        
+        const res = await fetch('https://qa.qodeq.net/api/v1/group/support/', {
+          method: 'GET',
+          headers
+        });
+        
+        if (!res.ok) {
+          throw new Error(`Ошибка ${res.status}`);
+        }
+        
+        const json = await res.json();
+        // Если данные - массив объектов с teamlead и groups, извлекаем все группы
+        if (Array.isArray(json)) {
+          const allGroups = [];
+          json.forEach((teamleadItem) => {
+            if (teamleadItem?.groups && Array.isArray(teamleadItem.groups)) {
+              teamleadItem.groups.forEach((group) => {
+                if (group?.id) {
+                  allGroups.push({
+                    id: group.id,
+                    name: group.supervisor_username || `Группа ${group.id}`
+                  });
+                }
+              });
+            }
+          });
+          setGroups(allGroups);
+        } else {
+          setGroups([]);
+        }
+      } catch (e) {
+        console.error('Ошибка при загрузке групп:', e);
+        setGroups([]);
+      } finally {
+        setLoadingGroups(false);
+      }
+    };
+    
+    fetchGroups();
+  }, [role]);
+
   useEffect(() => {
     const fetchMetrics = async () => {
       setLoading(true);
@@ -531,6 +645,9 @@ export const MetricsPage = () => {
           if (formattedDate) {
             params.append('date_end', formattedDate);
           }
+        }
+        if (selectedGroupId) {
+          params.append('support_group_id', selectedGroupId);
         }
         
         const url = `https://qa.qodeq.net/api/v1/chat/statisticsmetrics${params.toString() ? '?' + params.toString() : ''}`;
@@ -564,7 +681,7 @@ export const MetricsPage = () => {
     };
     
     fetchMetrics();
-  }, [date_start, date_end]);
+  }, [date_start, date_end, selectedGroupId]);
 
   return (
     <Layout>
@@ -594,6 +711,26 @@ export const MetricsPage = () => {
                 placeholder="Выберите дату окончания"
               />
             </FilterGroup>
+            {(role === 'head' || role === 'team_lead') && (
+              <FilterGroup>
+                <FilterSelect
+                  theme={theme}
+                  value={selectedGroupId}
+                  onChange={(e) => setSelectedGroupId(e.target.value)}
+                  disabled={loadingGroups}
+                >
+                  <option value="">Все группы</option>
+                  {groups.map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.name}
+                    </option>
+                  ))}
+                </FilterSelect>
+              </FilterGroup>
+            )}
+            <StaffMetricsButton theme={theme} onClick={() => navigate('/staff-metrics')}>
+              Staff metrics
+            </StaffMetricsButton>
           </FiltersContainer>
         </HeaderSection>
 

@@ -27,6 +27,7 @@ export const FEATURE_DEPARTMENT = {
   '/groups-qa': 'quality_assurance',
   '/group-supports': ['quality_assurance', 'support'],
   '/metrics': ['quality_assurance', 'support'],
+  '/staff-metrics': ['quality_assurance', 'support'],
   '/settings': 'quality_assurance',
   '/manual-check': 'quality_assurance',
   '/admin': ['quality_assurance', 'support'],
@@ -57,6 +58,10 @@ export const FEATURE_ROLES = {
     support: ['admin', 'team_lead', 'head'],
   },
   '/metrics': {
+    quality_assurance: ['admin', 'team_lead', 'head'],
+    support: ['team_lead', 'head'],
+  },
+  '/staff-metrics': {
     quality_assurance: ['admin', 'team_lead', 'head'],
     support: ['team_lead', 'head'],
   },
@@ -105,6 +110,10 @@ export const ACCESS_RULES = {
     quality_assurance: { roles: ['admin', 'team_lead', 'head'], methods: ['GET', 'POST', 'PATCH', 'DELETE'] },
     support: { roles: ['team_lead', 'head'], methods: ['GET', 'POST', 'PATCH', 'DELETE'] },
   },
+  staffMetrics: {
+    quality_assurance: { roles: ['admin', 'team_lead', 'head'], methods: ['GET', 'POST', 'PATCH', 'DELETE'] },
+    support: { roles: ['team_lead', 'head'], methods: ['GET', 'POST', 'PATCH', 'DELETE'] },
+  },
   settings: {
     quality_assurance: { roles: ['admin', 'team_lead', 'head'], methods: ['GET', 'PATCH'] },
     support: null,
@@ -149,13 +158,18 @@ export const canUseMethod = (feature, method, department, role) => {
 
 export const UserProfileProvider = ({ children }) => {
   const [profile, setProfile] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const loadProfile = useCallback(async () => {
+    setIsLoading(true);
     try {
       const saved = localStorage.getItem(PROFILE_STORAGE_KEY);
       if (saved) {
         try {
-          setProfile(JSON.parse(saved));
+          const parsedProfile = JSON.parse(saved);
+          setProfile(parsedProfile);
+          // Если профиль есть в localStorage, устанавливаем isLoading в false сразу
+          setIsLoading(false);
         } catch (e) {
           console.error('Parse saved profile', e);
         }
@@ -165,10 +179,13 @@ export const UserProfileProvider = ({ children }) => {
         const data = await response.json();
         setProfile(data);
         localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(data));
+        setIsLoading(false);
         return data;
       }
     } catch (e) {
       console.error('Load profile', e);
+    } finally {
+      setIsLoading(false);
     }
     return null;
   }, []);
@@ -186,6 +203,7 @@ export const UserProfileProvider = ({ children }) => {
     loadProfile,
     department,
     role,
+    isLoading,
     canAccessFeature: (path) => canAccessFeature(path, department, role),
     canUseMethod: (feature, method) => canUseMethod(feature, method, department, role),
   };

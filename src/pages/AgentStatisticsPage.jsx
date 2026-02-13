@@ -781,9 +781,9 @@ export const AgentStatisticsPage = () => {
                 value={checked}
                 onChange={(e) => setChecked(e.target.value)}
               >
-                <option value="All">All</option>
-                <option value="True">True</option>
-                <option value="False">False</option>
+                <option value="All">Все</option>
+                <option value="True">Проверенные</option>
+                <option value="False">Не проверенные</option>
               </FilterSelect>
             </div>
           </HeaderSection>

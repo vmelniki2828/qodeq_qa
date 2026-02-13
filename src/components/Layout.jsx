@@ -66,9 +66,15 @@ const ContentArea = styled.div`
 
 export const Layout = ({ children }) => {
   const { theme } = useTheme();
-  const { canAccessFeature } = useUserProfile();
+  const { canAccessFeature, isLoading } = useUserProfile();
   const location = useLocation();
   const basePath = getBasePath(location.pathname);
+  
+  // Не делаем редирект, пока профиль загружается
+  if (isLoading) {
+    return null; // или можно показать Loader
+  }
+  
   if (!canAccessFeature(basePath)) {
     return <Navigate to="/dashboard" replace />;
   }

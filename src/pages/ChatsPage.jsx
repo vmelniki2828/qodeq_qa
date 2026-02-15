@@ -332,13 +332,16 @@ const Select = styled.select`
 
 export const ChatsPage = () => {
   const { theme } = useTheme();
-  const { department } = useUserProfile();
+  const { department, role } = useUserProfile();
   const navigate = useNavigate();
   const [chats, setChats] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [pagesCount, setPagesCount] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [projects, setProjects] = useState([]);
+  const [groups, setGroups] = useState([]);
+  const [selectedGroupId, setSelectedGroupId] = useState('');
+  const [loadingGroups, setLoadingGroups] = useState(false);
   const [filters, setFilters] = useState({
     chat_id: '',
     user_type: '',
@@ -385,6 +388,9 @@ export const ChatsPage = () => {
       if (appliedFilters.created_from) params.append('created_from', appliedFilters.created_from);
       if (appliedFilters.created_to) params.append('created_to', appliedFilters.created_to);
       if (appliedFilters.checked !== '') params.append('checked', appliedFilters.checked);
+      if (selectedGroupId) {
+        params.append('support_group_id', selectedGroupId);
+      }
       
       const url = `/api/v1/chat/reviewedchat/?${params.toString()}`;
       const response = await apiFetch(url, {
@@ -450,7 +456,7 @@ export const ChatsPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, appliedFilters, pageSize]);
+  }, [currentPage, appliedFilters, pageSize, selectedGroupId]);
 
   useEffect(() => {
     fetchChats();
@@ -476,6 +482,59 @@ export const ChatsPage = () => {
   };
     fetchProjects();
   }, []);
+
+  // Загрузка групп для HEAD и TEAM LEAD
+  useEffect(() => {
+    const fetchGroups = async () => {
+      if (role !== 'head' && role !== 'team_lead') {
+        return;
+      }
+      
+      setLoadingGroups(true);
+      try {
+        const token = getCookie('rb_admin_token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        
+        const res = await fetch('https://qa.qodeq.net/api/v1/group/support/', {
+          method: 'GET',
+          headers
+        });
+        
+        if (!res.ok) {
+          throw new Error(`Ошибка ${res.status}`);
+        }
+        
+        const json = await res.json();
+        // Если данные - массив объектов с teamlead и groups, извлекаем все группы
+        if (Array.isArray(json)) {
+          const allGroups = [];
+          json.forEach((teamleadItem) => {
+            if (teamleadItem?.groups && Array.isArray(teamleadItem.groups)) {
+              teamleadItem.groups.forEach((group) => {
+                if (group?.id) {
+                  allGroups.push({
+                    id: group.id,
+                    name: group.supervisor_username || `Группа ${group.id}`
+                  });
+                }
+              });
+            }
+          });
+          setGroups(allGroups);
+        } else {
+          setGroups([]);
+        }
+      } catch (e) {
+        console.error('Ошибка при загрузке групп:', e);
+        setGroups([]);
+      } finally {
+        setLoadingGroups(false);
+      }
+    };
+    
+    fetchGroups();
+  }, [role]);
 
   const handleRefresh = () => {
     fetchChats();
@@ -651,6 +710,24 @@ export const ChatsPage = () => {
                 <option value="false">Not Checked</option>
               </Select>
             </FilterGroup>
+            {(role === 'head' || role === 'team_lead') && (
+              <FilterGroup>
+                <FilterLabelStyled theme={theme}>Группа</FilterLabelStyled>
+                <Select
+                  theme={theme}
+                  value={selectedGroupId}
+                  onChange={(e) => setSelectedGroupId(e.target.value)}
+                  disabled={loadingGroups}
+                >
+                  <option value="">Все группы</option>
+                  {groups.map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.name}
+                    </option>
+                  ))}
+                </Select>
+              </FilterGroup>
+            )}
             <FilterButtons>
               <Button theme={theme} onClick={handleApplyFilters}>
                 Применить

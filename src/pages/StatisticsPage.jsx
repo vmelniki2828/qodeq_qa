@@ -437,6 +437,9 @@ export const StatisticsPage = () => {
   const [stats, setStats] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(getInitialMonth());
   const [checked, setChecked] = useState('All');
+  const [groups, setGroups] = useState([]);
+  const [selectedGroupId, setSelectedGroupId] = useState('');
+  const [loadingGroups, setLoadingGroups] = useState(false);
   const months = generateMonths();
   const hasLoadedRef = useRef(false);
   const previousMonthRef = useRef(null);
@@ -482,6 +485,9 @@ export const StatisticsPage = () => {
       params.append('date_end', formattedEndDate);
       if (checked !== 'All') {
         params.append('checked', checked.toLowerCase());
+      }
+      if (selectedGroupId) {
+        params.append('support_group_id', selectedGroupId);
       }
       
       const url = `https://qa.qodeq.net/api/v1/chat/statistics?${params.toString()}`;
@@ -530,6 +536,67 @@ export const StatisticsPage = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checked]);
+
+  // Автоматическая загрузка данных при изменении selectedGroupId
+  useEffect(() => {
+    if (hasLoadedRef.current) {
+      fetchStats();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedGroupId]);
+
+  // Загрузка групп для HEAD и TEAM LEAD
+  useEffect(() => {
+    const fetchGroups = async () => {
+      if (role !== 'head' && role !== 'team_lead') {
+        return;
+      }
+      
+      setLoadingGroups(true);
+      try {
+        const token = getCookie('rb_admin_token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        
+        const res = await fetch('https://qa.qodeq.net/api/v1/group/support/', {
+          method: 'GET',
+          headers
+        });
+        
+        if (!res.ok) {
+          throw new Error(`Ошибка ${res.status}`);
+        }
+        
+        const json = await res.json();
+        // Если данные - массив объектов с teamlead и groups, извлекаем все группы
+        if (Array.isArray(json)) {
+          const allGroups = [];
+          json.forEach((teamleadItem) => {
+            if (teamleadItem?.groups && Array.isArray(teamleadItem.groups)) {
+              teamleadItem.groups.forEach((group) => {
+                if (group?.id) {
+                  allGroups.push({
+                    id: group.id,
+                    name: group.supervisor_username || `Группа ${group.id}`
+                  });
+                }
+              });
+            }
+          });
+          setGroups(allGroups);
+        } else {
+          setGroups([]);
+        }
+      } catch (e) {
+        console.error('Ошибка при загрузке групп:', e);
+        setGroups([]);
+      } finally {
+        setLoadingGroups(false);
+      }
+    };
+    
+    fetchGroups();
+  }, [role]);
 
 
   const getScoreLevel = (score) => {
@@ -585,6 +652,21 @@ export const StatisticsPage = () => {
                 <option value="True">Проверенные</option>
                 <option value="False">Не проверенные</option>
               </FilterSelect>
+              {(role === 'head' || role === 'team_lead') && (
+                <FilterSelect
+                  theme={theme}
+                  value={selectedGroupId}
+                  onChange={(e) => setSelectedGroupId(e.target.value)}
+                  disabled={loadingGroups}
+                >
+                  <option value="">Все группы</option>
+                  {groups.map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.name}
+                    </option>
+                  ))}
+                </FilterSelect>
+              )}
             </div>
           </HeaderSection>
 

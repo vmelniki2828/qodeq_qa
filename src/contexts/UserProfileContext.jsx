@@ -43,6 +43,7 @@ export const FEATURE_DEPARTMENT = {
  * Groups Support: support — admin, team_lead, head.
  */
 export const FEATURE_ROLES = {
+  '/integrations': { quality_assurance: ['admin', 'team_lead', 'head'] },
   '/projects': { quality_assurance: ['admin', 'team_lead', 'head'] },
   '/chats': {
     quality_assurance: ['admin', 'team_lead', 'head', 'agent'],

@@ -1096,11 +1096,12 @@ export const ManualCheckPage = () => {
                     <MessagesList theme={theme}>
                       {messages.map((msg, idx) => {
                         const authorType = msg.author?.type;
+                        const isBot = authorType === 'bot';
                         const isSystem = !msg.author || authorType === 'system';
                         let align = 'left';
                         if (isSystem) {
                           align = 'center';
-                        } else if (authorType === 'agent') {
+                        } else if (authorType === 'agent' || isBot) {
                           align = 'right';
                         }
                         return (
@@ -1116,7 +1117,7 @@ export const ManualCheckPage = () => {
                                 <MessageAuthor>
                                   <AuthorName theme={theme}>{msg.author?.name || 'Unknown'}</AuthorName>
                                   <AuthorInfo theme={theme}>
-                                    {authorType === 'agent' ? 'Agent' : authorType === 'customer' ? 'Customer' : 'System'}
+                                    {authorType === 'agent' ? 'Agent' : authorType === 'customer' ? 'Customer' : authorType === 'bot' ? 'Bot' : 'System'}
                                   </AuthorInfo>
                                 </MessageAuthor>
                                 <MessageTime theme={theme}>{formatDate(msg.created_at)}</MessageTime>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import styled, { ThemeProvider } from 'styled-components';
 import { useTheme } from '../contexts/ThemeContext';
+import { useUserProfile } from '../contexts/UserProfileContext';
 import { Layout } from '../components/Layout';
 import { Loader } from '../components/Loader';
 import { HiChevronUp, HiChevronDown, HiCheck, HiXMark, HiPlus, HiMinus } from 'react-icons/hi2';
@@ -272,11 +273,16 @@ const EmptyState = styled.div`
 
 export const TagsPage = () => {
   const { theme } = useTheme();
+  const { role, department } = useUserProfile();
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedQuestions, setExpandedQuestions] = useState(new Set());
   const [editingPenalties, setEditingPenalties] = useState({});
+
+  // Проверка прав на редактирование Penalty: только TL, HEAD, ADMIN в QA Department
+  const canEditPenalty = department === 'quality_assurance' && 
+    (role === 'team_lead' || role === 'head' || role === 'admin');
 
   useEffect(() => {
     const fetchTags = async () => {
@@ -480,38 +486,44 @@ export const TagsPage = () => {
                                 </TagField>
                                 <TagField $position="center" theme={theme}>
                                   <TagLabel theme={theme}>Penalty:</TagLabel>
-                                  <PenaltyEditor>
-                                    <PenaltyButton
-                                      theme={theme}
-                                      onClick={() => handlePenaltyDecrement(tag.id, editingPenalties[tag.id] !== undefined ? editingPenalties[tag.id] : tag.penalty)}
-                                      title="Уменьшить"
-                                    >
-                                      <HiMinus size={14} />
-                                    </PenaltyButton>
-                                    <PenaltyInput
-                                      theme={theme}
-                                      type="number"
-                                      min="0"
-                                      value={editingPenalties[tag.id] !== undefined ? editingPenalties[tag.id] : (tag.penalty !== null && tag.penalty !== undefined ? tag.penalty : 0)}
-                                      onChange={(e) => handlePenaltyChange(tag.id, e.target.value)}
-                                    />
-                                    <PenaltyButton
-                                      theme={theme}
-                                      onClick={() => handlePenaltyIncrement(tag.id, editingPenalties[tag.id] !== undefined ? editingPenalties[tag.id] : tag.penalty)}
-                                      title="Увеличить"
-                                    >
-                                      <HiPlus size={14} />
-                                    </PenaltyButton>
-                                    {editingPenalties[tag.id] !== undefined && editingPenalties[tag.id] !== tag.penalty && (
-                                      <SaveButton
+                                  {canEditPenalty ? (
+                                    <PenaltyEditor>
+                                      <PenaltyButton
                                         theme={theme}
-                                        onClick={() => handleSavePenalty(tag.id)}
-                                        title="Сохранить"
+                                        onClick={() => handlePenaltyDecrement(tag.id, editingPenalties[tag.id] !== undefined ? editingPenalties[tag.id] : tag.penalty)}
+                                        title="Уменьшить"
                                       >
-                                        <HiCheck size={14} />
-                                      </SaveButton>
-                                    )}
-                                  </PenaltyEditor>
+                                        <HiMinus size={14} />
+                                      </PenaltyButton>
+                                      <PenaltyInput
+                                        theme={theme}
+                                        type="number"
+                                        min="0"
+                                        value={editingPenalties[tag.id] !== undefined ? editingPenalties[tag.id] : (tag.penalty !== null && tag.penalty !== undefined ? tag.penalty : 0)}
+                                        onChange={(e) => handlePenaltyChange(tag.id, e.target.value)}
+                                      />
+                                      <PenaltyButton
+                                        theme={theme}
+                                        onClick={() => handlePenaltyIncrement(tag.id, editingPenalties[tag.id] !== undefined ? editingPenalties[tag.id] : tag.penalty)}
+                                        title="Увеличить"
+                                      >
+                                        <HiPlus size={14} />
+                                      </PenaltyButton>
+                                      {editingPenalties[tag.id] !== undefined && editingPenalties[tag.id] !== tag.penalty && (
+                                        <SaveButton
+                                          theme={theme}
+                                          onClick={() => handleSavePenalty(tag.id)}
+                                          title="Сохранить"
+                                        >
+                                          <HiCheck size={14} />
+                                        </SaveButton>
+                                      )}
+                                    </PenaltyEditor>
+                                  ) : (
+                                    <TagValue theme={theme}>
+                                      {tag.penalty !== null && tag.penalty !== undefined ? tag.penalty : 0}
+                                    </TagValue>
+                                  )}
                                 </TagField>
                                 <TagField $position="right" theme={theme}>
                                   <TagLabel theme={theme}>Active:</TagLabel>

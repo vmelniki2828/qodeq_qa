@@ -440,6 +440,9 @@ export const StatisticsPage = () => {
   const [groups, setGroups] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState('');
   const [loadingGroups, setLoadingGroups] = useState(false);
+  const [qaGroups, setQAGroups] = useState([]);
+  const [selectedQAGroupId, setSelectedQAGroupId] = useState('');
+  const [loadingQAGroups, setLoadingQAGroups] = useState(false);
   const months = generateMonths();
   const hasLoadedRef = useRef(false);
   const previousMonthRef = useRef(null);
@@ -486,8 +489,11 @@ export const StatisticsPage = () => {
       if (checked !== 'All') {
         params.append('checked', checked.toLowerCase());
       }
+      // Используем только одну группу: либо Support, либо QA
       if (selectedGroupId) {
         params.append('support_group_id', selectedGroupId);
+      } else if (selectedQAGroupId) {
+        params.append('support_group_id', selectedQAGroupId);
       }
       
       const url = `https://qa.qodeq.net/api/v1/chat/statistics?${params.toString()}`;
@@ -545,7 +551,15 @@ export const StatisticsPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedGroupId]);
 
-  // Загрузка групп для HEAD и TEAM LEAD
+  // Автоматическая загрузка данных при изменении selectedQAGroupId
+  useEffect(() => {
+    if (hasLoadedRef.current) {
+      fetchStats();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedQAGroupId]);
+
+  // Загрузка групп для HEAD и TEAM LEAD (Support)
   useEffect(() => {
     const fetchGroups = async () => {
       if (role !== 'head' && role !== 'team_lead') {
@@ -597,6 +611,63 @@ export const StatisticsPage = () => {
     
     fetchGroups();
   }, [role]);
+
+  // Загрузка QA групп для QA TEAM LEAD, HEAD, ADMIN
+  useEffect(() => {
+    const fetchQAGroups = async () => {
+      if (department !== 'quality_assurance' || (role !== 'team_lead' && role !== 'head' && role !== 'admin')) {
+        return;
+      }
+      
+      if (!selectedMonth) {
+        return;
+      }
+
+      setLoadingQAGroups(true);
+      try {
+        // Парсим выбранный месяц (формат: YYYY-MM)
+        const [year, month] = selectedMonth.split('-').map(Number);
+        const monthStart = getMonthStart(year, month - 1);
+        const monthEnd = getMonthEnd(year, month - 1);
+        
+        const formattedStartDate = formatDateForAPI(monthStart);
+        const formattedEndDate = formatDateForAPI(monthEnd);
+
+        const token = getCookie('rb_admin_token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        
+        const url = `https://qa.qodeq.net/api/v1/group/qa/?start_date=${formattedStartDate}&end_date=${formattedEndDate}`;
+        const res = await fetch(url, {
+          method: 'GET',
+          headers
+        });
+        
+        if (!res.ok) {
+          throw new Error(`Ошибка ${res.status}`);
+        }
+        
+        const json = await res.json();
+        // Обрабатываем ответ API
+        if (Array.isArray(json)) {
+          const allGroups = json.map((group) => ({
+            id: group.id,
+            name: group.name || `Группа ${group.id}`
+          }));
+          setQAGroups(allGroups);
+        } else {
+          setQAGroups([]);
+        }
+      } catch (e) {
+        console.error('Ошибка при загрузке QA групп:', e);
+        setQAGroups([]);
+      } finally {
+        setLoadingQAGroups(false);
+      }
+    };
+    
+    fetchQAGroups();
+  }, [selectedMonth, role, department]);
 
 
   const getScoreLevel = (score) => {
@@ -656,11 +727,38 @@ export const StatisticsPage = () => {
                 <FilterSelect
                   theme={theme}
                   value={selectedGroupId}
-                  onChange={(e) => setSelectedGroupId(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedGroupId(e.target.value);
+                    // Сбрасываем QA группу при выборе Support группы
+                    if (e.target.value) {
+                      setSelectedQAGroupId('');
+                    }
+                  }}
                   disabled={loadingGroups}
                 >
                   <option value="">Все группы</option>
                   {groups.map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.name}
+                    </option>
+                  ))}
+                </FilterSelect>
+              )}
+              {department === 'quality_assurance' && (role === 'team_lead' || role === 'head' || role === 'admin') && (
+                <FilterSelect
+                  theme={theme}
+                  value={selectedQAGroupId}
+                  onChange={(e) => {
+                    setSelectedQAGroupId(e.target.value);
+                    // Сбрасываем Support группу при выборе QA группы
+                    if (e.target.value) {
+                      setSelectedGroupId('');
+                    }
+                  }}
+                  disabled={loadingQAGroups}
+                >
+                  <option value="">Все QA группы</option>
+                  {qaGroups.map((group) => (
                     <option key={group.id} value={group.id}>
                       {group.name}
                     </option>

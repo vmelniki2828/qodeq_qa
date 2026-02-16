@@ -19,6 +19,30 @@ const formatChatDate = (v) => {
   } catch (e) { return v; }
 };
 
+// Функция для форматирования даты в YYYY-MM-DD
+const formatDateForAPI = (dateString) => {
+  if (!dateString) return '';
+  // Если это уже строка в формате YYYY-MM-DD, возвращаем как есть
+  if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return dateString;
+  }
+  
+  // Если это строка с датой, пытаемся преобразовать
+  try {
+    const dateObj = new Date(dateString);
+    if (!isNaN(dateObj.getTime())) {
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+  } catch (e) {
+    // Если не удалось преобразовать, возвращаем пустую строку
+  }
+  
+  return '';
+};
+
 const HeaderSection = styled.div`
   display: flex;
   justify-content: space-between;
@@ -342,6 +366,9 @@ export const ChatsPage = () => {
   const [groups, setGroups] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState('');
   const [loadingGroups, setLoadingGroups] = useState(false);
+  const [qaGroups, setQAGroups] = useState([]);
+  const [selectedQAGroupId, setSelectedQAGroupId] = useState('');
+  const [loadingQAGroups, setLoadingQAGroups] = useState(false);
   const [filters, setFilters] = useState({
     chat_id: '',
     user_type: '',
@@ -390,6 +417,9 @@ export const ChatsPage = () => {
       if (appliedFilters.checked !== '') params.append('checked', appliedFilters.checked);
       if (selectedGroupId) {
         params.append('support_group_id', selectedGroupId);
+      }
+      if (selectedQAGroupId) {
+        params.append('qa_group_id', selectedQAGroupId);
       }
       
       const url = `/api/v1/chat/reviewedchat/?${params.toString()}`;
@@ -456,7 +486,7 @@ export const ChatsPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, appliedFilters, pageSize, selectedGroupId]);
+  }, [currentPage, appliedFilters, pageSize, selectedGroupId, selectedQAGroupId]);
 
   useEffect(() => {
     fetchChats();
@@ -535,6 +565,55 @@ export const ChatsPage = () => {
     
     fetchGroups();
   }, [role]);
+
+  // Загрузка QA групп для QA TEAM LEAD, HEAD, ADMIN
+  useEffect(() => {
+    const fetchQAGroups = async () => {
+      if (department !== 'quality_assurance' || (role !== 'team_lead' && role !== 'head' && role !== 'admin')) {
+        return;
+      }
+      
+      // Используем даты из текущих фильтров (до применения) или примененных фильтров, или текущую дату
+      const startDate = formatDateForAPI(filters.created_from) || formatDateForAPI(appliedFilters.created_from) || new Date().toISOString().split('T')[0];
+      const endDate = formatDateForAPI(filters.created_to) || formatDateForAPI(appliedFilters.created_to) || new Date().toISOString().split('T')[0];
+
+      setLoadingQAGroups(true);
+      try {
+        const token = getCookie('rb_admin_token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        
+        const url = `https://qa.qodeq.net/api/v1/group/qa/?start_date=${startDate}&end_date=${endDate}`;
+        const res = await fetch(url, {
+          method: 'GET',
+          headers
+        });
+        
+        if (!res.ok) {
+          throw new Error(`Ошибка ${res.status}`);
+        }
+        
+        const json = await res.json();
+        // Обрабатываем ответ API
+        if (Array.isArray(json)) {
+          const allGroups = json.map((group) => ({
+            id: group.id,
+            name: group.name || `Группа ${group.id}`
+          }));
+          setQAGroups(allGroups);
+        } else {
+          setQAGroups([]);
+        }
+      } catch (e) {
+        console.error('Ошибка при загрузке QA групп:', e);
+        setQAGroups([]);
+      } finally {
+        setLoadingQAGroups(false);
+      }
+    };
+    
+    fetchQAGroups();
+  }, [filters.created_from, filters.created_to, appliedFilters.created_from, appliedFilters.created_to, role, department]);
 
   const handleRefresh = () => {
     fetchChats();
@@ -721,6 +800,24 @@ export const ChatsPage = () => {
                 >
                   <option value="">Все группы</option>
                   {groups.map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.name}
+                    </option>
+                  ))}
+                </Select>
+              </FilterGroup>
+            )}
+            {department === 'quality_assurance' && (role === 'team_lead' || role === 'head' || role === 'admin') && (
+              <FilterGroup>
+                <FilterLabelStyled theme={theme}>QA Группа</FilterLabelStyled>
+                <Select
+                  theme={theme}
+                  value={selectedQAGroupId}
+                  onChange={(e) => setSelectedQAGroupId(e.target.value)}
+                  disabled={loadingQAGroups}
+                >
+                  <option value="">Все QA группы</option>
+                  {qaGroups.map((group) => (
                     <option key={group.id} value={group.id}>
                       {group.name}
                     </option>

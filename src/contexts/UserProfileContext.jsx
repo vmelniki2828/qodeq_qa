@@ -4,7 +4,7 @@ import { apiFetch } from '../utils/api';
 const UserProfileContext = createContext(null);
 
 const PROFILE_STORAGE_KEY = 'userProfile';
-const ME_URL = '/api/v1/profile/user/me';
+const ME_URL = '/api/v1/profile/user/me?detail=full';
 
 export const useUserProfile = () => {
   const ctx = useContext(UserProfileContext);
@@ -68,8 +68,8 @@ export const FEATURE_ROLES = {
   },
   '/settings': { quality_assurance: ['admin', 'team_lead', 'head'] },
   '/admin': {
-    quality_assurance: ['admin', 'team_lead', 'head'],
-    support: ['admin', 'team_lead', 'head'],
+    quality_assurance: ['head', 'admin', 'team_lead'],
+    support: ['head'],
   },
 };
 

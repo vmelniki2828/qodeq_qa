@@ -292,10 +292,12 @@ const ColorSwatch = styled.span`
   vertical-align: middle;
 `;
 
+const MANUAL_CHECK_SPLITTER_KEY = 'manualCheck_splitterPosition';
+
 const MessagesSection = styled.div`
   display: flex;
   flex-direction: column;
-  flex: 1;
+  flex: 0 0 ${({ $flex }) => ($flex != null ? `${$flex}%` : '50%')};
   min-width: 0;
   overflow: hidden;
   padding: 20px;
@@ -727,9 +729,19 @@ export const ManualCheckPage = () => {
   
   // Показываем фильтры всегда, когда нет данных
   const showFilters = !data && !loading;
-  const [splitterPosition, setSplitterPosition] = useState(50);
+  const [splitterPosition, setSplitterPosition] = useState(() => {
+    try {
+      const v = localStorage.getItem(MANUAL_CHECK_SPLITTER_KEY);
+      if (v != null) {
+        const n = Number(v);
+        if (!Number.isNaN(n) && n >= 20 && n <= 80) return n;
+      }
+    } catch (e) {}
+    return 50;
+  });
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
+  const dragStartRef = useRef({ x: 0, position: 0 });
   const [expandedResults, setExpandedResults] = useState(new Set());
   const [collapsedAgents, setCollapsedAgents] = useState(new Set());
   const [localDecisions, setLocalDecisions] = useState({});
@@ -923,9 +935,16 @@ export const ManualCheckPage = () => {
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (!isDragging || !containerRef.current) return;
+      const { x: startX, position: startPosition } = dragStartRef.current;
       const rect = containerRef.current.getBoundingClientRect();
-      const newPosition = ((e.clientX - rect.left) / rect.width) * 100;
-      setSplitterPosition(Math.max(20, Math.min(80, newPosition)));
+      const deltaPct = ((e.clientX - startX) / rect.width) * 100;
+      const newPosition = startPosition + deltaPct;
+      const clamped = Math.max(20, Math.min(80, newPosition));
+      setSplitterPosition(clamped);
+      dragStartRef.current = { x: e.clientX, position: clamped };
+      try {
+        localStorage.setItem(MANUAL_CHECK_SPLITTER_KEY, String(clamped));
+      } catch (e) {}
     };
 
     const handleMouseUp = () => {
@@ -944,6 +963,7 @@ export const ManualCheckPage = () => {
 
   const handleDividerMouseDown = (e) => {
     e.preventDefault();
+    dragStartRef.current = { x: e.clientX, position: splitterPosition };
     setIsDragging(true);
   };
 
@@ -1137,7 +1157,7 @@ export const ManualCheckPage = () => {
 
                 <ResizableDivider theme={theme} onMouseDown={handleDividerMouseDown} />
 
-                <ResultsSection theme={theme} $flex={100 - splitterPosition}>
+                <ResultsSection theme={theme}>
                   <SectionTitle theme={theme}>Results</SectionTitle>
                   {Object.keys(results).length > 0 ? (
                     <ResultsList theme={theme}>

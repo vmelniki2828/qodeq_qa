@@ -52,7 +52,7 @@ const DropdownMenu = styled.div`
 `;
 
 const ProfileLinkText = styled.span`
-  color: #ACACAC;
+  color: #6B6B6B;
 `;
 
 const MenuItem = styled.div`

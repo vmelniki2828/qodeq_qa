@@ -6,6 +6,7 @@ import { useUserProfile } from '../contexts/UserProfileContext';
 import { ToggleTheme } from '../components/ToggleTheme';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import { apiFetch, getCookie, setCookie } from '../utils/api';
+import { HiEye, HiEyeSlash } from 'react-icons/hi2';
 
 const LoginContainer = styled.div`
   min-height: 100vh;
@@ -25,9 +26,56 @@ const ThemeToggleWrapper = styled.div`
   right: 20px;
 `;
 
+const PasswordWrap = styled.div`
+  position: relative;
+  display: inline-block;
+  width: 100%;
+`;
+
+const PasswordInput = styled.input`
+  width: 100%;
+  padding: 12px 44px 12px 12px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 4px;
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.3s;
+  background-color: ${({ theme }) => theme.colors.background};
+  color: ${({ theme }) => theme.colors.primary};
+  box-sizing: border-box;
+
+  &:focus {
+    border-color: ${({ theme }) => theme.colors.accent};
+  }
+`;
+
+const PasswordToggle = styled.button`
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: ${({ theme }) => theme.colors.secondary};
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color 0.2s;
+
+  &:hover {
+    color: ${({ theme }) => theme.colors.primary};
+  }
+`;
+
 export const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { theme } = useTheme();
@@ -185,26 +233,27 @@ export const LoginPage = () => {
             >
               Пароль
             </label>
-            <input
-              id="password"
-              type="password"
-              name="password"
-              autoComplete="on"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={{
-                width: '674px',
-                padding: '12px',
-                border: `1px solid ${theme.colors.border}`,
-                borderRadius: '4px',
-                fontSize: '16px',
-                outline: 'none',
-                transition: 'border-color 0.3s',
-                backgroundColor: theme.colors.background,
-                color: theme.colors.primary,
-              }}
-              placeholder="Введите пароль"
-            />
+            <PasswordWrap theme={theme}>
+              <PasswordInput
+                theme={theme}
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                autoComplete="on"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Введите пароль"
+              />
+              <PasswordToggle
+                theme={theme}
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
+                tabIndex={-1}
+              >
+                {showPassword ? <HiEyeSlash size={20} /> : <HiEye size={20} />}
+              </PasswordToggle>
+            </PasswordWrap>
           </div>
 
           <button

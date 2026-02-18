@@ -493,7 +493,7 @@ export const StatisticsPage = () => {
       if (selectedGroupId) {
         params.append('support_group_id', selectedGroupId);
       } else if (selectedQAGroupId) {
-        params.append('support_group_id', selectedQAGroupId);
+        params.append('qa_group_id', selectedQAGroupId);
       }
       
       const url = `https://qa.qodeq.net/api/v1/chat/statistics?${params.toString()}`;

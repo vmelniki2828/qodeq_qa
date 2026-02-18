@@ -48,14 +48,45 @@ const CalendarDropdown = styled.div`
 const CalendarHeader = styled.div`
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   margin-bottom: 16px;
+  flex-wrap: wrap;
 `;
 
-const MonthYear = styled.div`
-  font-size: 14px;
-  font-weight: 600;
+const MonthSelect = styled.select`
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  font-size: 13px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 6px;
+  background-color: ${({ theme }) => theme.colors.background};
   color: ${({ theme }) => theme.colors.primary};
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s ease;
+
+  &:focus {
+    border-color: ${({ theme }) => theme.colors.accent};
+  }
+`;
+
+const YearSelect = styled.select`
+  width: 80px;
+  flex-shrink: 0;
+  padding: 6px 8px;
+  font-size: 13px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 6px;
+  background-color: ${({ theme }) => theme.colors.background};
+  color: ${({ theme }) => theme.colors.primary};
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s ease;
+
+  &:focus {
+    border-color: ${({ theme }) => theme.colors.accent};
+  }
 `;
 
 const NavButton = styled.button`
@@ -70,6 +101,7 @@ const NavButton = styled.button`
   color: ${({ theme }) => theme.colors.primary};
   cursor: pointer;
   transition: all 0.15s ease;
+  flex-shrink: 0;
 
   &:hover {
     background-color: ${({ theme }) =>
@@ -181,6 +213,11 @@ const months = [
 
 const weekDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
+const currentYear = new Date().getFullYear();
+const YEAR_MIN = currentYear - 120;
+const YEAR_MAX = currentYear + 10;
+const years = Array.from({ length: YEAR_MAX - YEAR_MIN + 1 }, (_, i) => YEAR_MIN + i);
+
 export const DatePicker = ({ value, onChange, id }) => {
   const { theme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
@@ -270,6 +307,16 @@ export const DatePicker = ({ value, onChange, id }) => {
 
   const handleNextMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  };
+
+  const handleMonthChange = (e) => {
+    const month = Number(e.target.value);
+    setCurrentDate(new Date(currentDate.getFullYear(), month, 1));
+  };
+
+  const handleYearChange = (e) => {
+    const year = Number(e.target.value);
+    setCurrentDate(new Date(year, currentDate.getMonth(), 1));
   };
 
   const handleDayClick = (day) => {
@@ -362,13 +409,24 @@ export const DatePicker = ({ value, onChange, id }) => {
           $left={calendarPosition.left}
         >
           <CalendarHeader>
-            <NavButton theme={theme} onClick={handlePrevMonth}>
+            <MonthSelect theme={theme} value={currentDate.getMonth()} onChange={handleMonthChange}>
+              {months.map((name, index) => (
+                <option key={index} value={index}>
+                  {name}
+                </option>
+              ))}
+            </MonthSelect>
+            <YearSelect theme={theme} value={currentDate.getFullYear()} onChange={handleYearChange}>
+              {years.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </YearSelect>
+            <NavButton theme={theme} onClick={handlePrevMonth} title="Предыдущий месяц">
               <HiChevronLeft size={16} />
             </NavButton>
-            <MonthYear theme={theme}>
-              {months[currentDate.getMonth()]} {currentDate.getFullYear()}
-            </MonthYear>
-            <NavButton theme={theme} onClick={handleNextMonth}>
+            <NavButton theme={theme} onClick={handleNextMonth} title="Следующий месяц">
               <HiChevronRight size={16} />
             </NavButton>
           </CalendarHeader>

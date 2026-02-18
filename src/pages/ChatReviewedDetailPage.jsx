@@ -354,6 +354,32 @@ const SectionTitle = styled.h3`
   letter-spacing: 0.6px;
 `;
 
+const SectionHeaderRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 12px;
+`;
+
+const FilterToggleLabel = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  color: ${({ theme }) => theme.colors.secondary};
+  white-space: nowrap;
+  user-select: none;
+`;
+
+const FilterToggleCheckbox = styled.input`
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: ${({ theme }) => theme.colors.accent};
+`;
+
 const ResizableDivider = styled.div`
   width: 4px;
   background: ${({ theme }) => theme.colors.border};
@@ -694,6 +720,7 @@ export const ChatReviewedDetailPage = () => {
   const containerRef = useRef(null);
   const [expandedResults, setExpandedResults] = useState(new Set());
   const [collapsedAgents, setCollapsedAgents] = useState(new Set());
+  const [hideBotCommunicated, setHideBotCommunicated] = useState(false);
   const [localDecisions, setLocalDecisions] = useState({});
   const [tagsSettings, setTagsSettings] = useState(null);
   const [selectedTags, setSelectedTags] = useState({});
@@ -959,7 +986,10 @@ export const ChatReviewedDetailPage = () => {
   };
 
   const d = data || {};
-  const messages = Array.isArray(d.messages) ? d.messages : [];
+  const allMessages = Array.isArray(d.messages) ? d.messages : [];
+  const messages = hideBotCommunicated
+    ? allMessages.filter((msg) => !msg.is_bot_communicated)
+    : allMessages;
   const results = d.results || {};
   const username = Array.isArray(d.username) ? d.username : (d.username != null ? [d.username] : []);
   const tags = Array.isArray(d.tags) ? d.tags : (d.tags != null ? [d.tags] : []);
@@ -1143,7 +1173,18 @@ export const ChatReviewedDetailPage = () => {
             {!loading && !error && data && (
               <ResizableContainer ref={containerRef}>
                 <MessagesSection theme={theme} $flex={splitterPosition}>
-                  <SectionTitle theme={theme}>Messages</SectionTitle>
+                  <SectionHeaderRow>
+                    <SectionTitle theme={theme} style={{ margin: 0 }}>Messages</SectionTitle>
+                    <FilterToggleLabel theme={theme}>
+                      <FilterToggleCheckbox
+                        type="checkbox"
+                        theme={theme}
+                        checked={hideBotCommunicated}
+                        onChange={(e) => setHideBotCommunicated(e.target.checked)}
+                      />
+                      Скрыть bot
+                    </FilterToggleLabel>
+                  </SectionHeaderRow>
                   {messages.length > 0 ? (
                     <MessagesList theme={theme}>
                       {messages.map((msg, idx) => {

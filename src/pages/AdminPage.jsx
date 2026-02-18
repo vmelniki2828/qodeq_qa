@@ -11,8 +11,8 @@ const USERS_URL = '/api/v1/authorization/management/users';
 const USER_UPDATE_URL = '/api/v1/authorization/management';
 const REGISTER_URL = '/api/v1/authorization/management/register';
 
-const ROLES = ['admin', 'team_lead', 'head', 'agent', 'supervisor'];
-const DEPARTMENTS = ['quality_assurance', 'support'];
+const ROLES = ['head', 'team_lead', 'agent', 'supervisor', 'admin', 'super_admin'];
+const DEPARTMENTS = ['support', 'quality_assurance'];
 
 const PageContent = styled.div`
   height: 100%;
@@ -165,8 +165,6 @@ const BackButton = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
-  align-self: flex-start;
-  margin-bottom: 20px;
 
   &:hover {
     background-color: ${({ theme }) =>
@@ -265,6 +263,27 @@ const SaveButton = styled.button`
     opacity: 0.9;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+const ResetPasswordButton = styled.button`
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: transparent;
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: ${({ theme }) => (theme.colors.primary === '#0D0D0D' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)')};
   }
 
   &:disabled {
@@ -402,6 +421,84 @@ const JsonBlock = styled.pre`
   word-break: break-all;
 `;
 
+const FiltersContainer = styled.div`
+  padding: 12px 16px;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  display: ${({ $isVisible }) => ($isVisible ? 'flex' : 'none')};
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  background-color: ${({ theme }) => theme.colors.background};
+`;
+
+const FilterGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 150px;
+`;
+
+const FilterLabel = styled.label`
+  font-size: 11px;
+  font-weight: 500;
+  color: ${({ theme }) => theme.colors.secondary};
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+`;
+
+const FilterInput = styled.input`
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 6px;
+  background-color: ${({ theme }) => theme.colors.background};
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+
+  &:focus {
+    border-color: ${({ theme }) => theme.colors.accent};
+  }
+`;
+
+const FilterSelect = styled.select`
+  width: 100%;
+  min-width: 0;
+  padding: 6px 10px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 6px;
+  background-color: ${({ theme }) => theme.colors.background};
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+
+  &:focus {
+    border-color: ${({ theme }) => theme.colors.accent};
+  }
+
+  &::-ms-expand {
+    display: none;
+  }
+`;
+
+const FilterButtons = styled.div`
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+`;
+
 export const AdminPage = () => {
   const { theme } = useTheme();
   const [data, setData] = useState(null);
@@ -416,6 +513,7 @@ export const AdminPage = () => {
     is_active: true,
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [editError, setEditError] = useState(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState({
@@ -430,11 +528,23 @@ export const AdminPage = () => {
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
 
+  const defaultFilters = { email: '', username: '', department: '', role: '' };
+  const [filters, setFilters] = useState(defaultFilters);
+  const [appliedFilters, setAppliedFilters] = useState(defaultFilters);
+  const [isFiltersVisible, setIsFiltersVisible] = useState(false);
+
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiFetch(USERS_URL);
+      const params = new URLSearchParams();
+      if (appliedFilters.email?.trim()) params.append('email', appliedFilters.email.trim());
+      if (appliedFilters.username?.trim()) params.append('username', appliedFilters.username.trim());
+      if (appliedFilters.department) params.append('department', appliedFilters.department);
+      if (appliedFilters.role) params.append('role', appliedFilters.role);
+      const query = params.toString();
+      const url = query ? `${USERS_URL}?${query}` : USERS_URL;
+      const response = await apiFetch(url);
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
         const msg = Array.isArray(err.detail)
@@ -449,11 +559,20 @@ export const AdminPage = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [appliedFilters]);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
+
+  const handleApplyFilters = () => {
+    setAppliedFilters({ ...filters });
+  };
+
+  const handleClearFilters = () => {
+    setFilters(defaultFilters);
+    setAppliedFilters(defaultFilters);
+  };
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -555,6 +674,35 @@ export const AdminPage = () => {
       setEditError(e.message || 'Не удалось сохранить');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!editingUser?.id) return;
+    setEditError(null);
+    setIsResettingPassword(true);
+    try {
+      const response = await apiFetch(
+        `${USER_UPDATE_URL}/${editingUser.id}/reset-password`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        }
+      );
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        const msg = Array.isArray(err.detail) && err.detail.length
+          ? err.detail.map((d) => d.msg || d.message).filter(Boolean).join('. ')
+          : err.detail || err.message || `Ошибка ${response.status}`;
+        setEditError(msg);
+        return;
+      }
+      Notify.success('Пароль сброшен');
+    } catch (e) {
+      setEditError(e.message || 'Не удалось сбросить пароль');
+    } finally {
+      setIsResettingPassword(false);
     }
   };
 
@@ -685,11 +833,79 @@ export const AdminPage = () => {
         <HeaderSection theme={theme}>
           <Title theme={theme}>Admin</Title>
           <ButtonsGroup>
+            <Button
+              theme={theme}
+              onClick={() => setIsFiltersVisible(!isFiltersVisible)}
+              title={isFiltersVisible ? 'Скрыть фильтры' : 'Показать фильтры'}
+            >
+              Filters
+            </Button>
             <Button theme={theme} $primary onClick={handleCreate}>
               Create
             </Button>
           </ButtonsGroup>
         </HeaderSection>
+
+        <FiltersContainer theme={theme} $isVisible={isFiltersVisible}>
+          <FilterGroup>
+            <FilterLabel theme={theme}>Email</FilterLabel>
+            <FilterInput
+              theme={theme}
+              type="text"
+              placeholder="Поиск по email"
+              value={filters.email}
+              onChange={(e) => setFilters((prev) => ({ ...prev, email: e.target.value }))}
+            />
+          </FilterGroup>
+          <FilterGroup>
+            <FilterLabel theme={theme}>Username</FilterLabel>
+            <FilterInput
+              theme={theme}
+              type="text"
+              placeholder="Поиск по username"
+              value={filters.username}
+              onChange={(e) => setFilters((prev) => ({ ...prev, username: e.target.value }))}
+            />
+          </FilterGroup>
+          <FilterGroup>
+            <FilterLabel theme={theme}>Department</FilterLabel>
+            <FilterSelect
+              theme={theme}
+              value={filters.department}
+              onChange={(e) => setFilters((prev) => ({ ...prev, department: e.target.value }))}
+            >
+              <option value="">Все</option>
+              {DEPARTMENTS.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </FilterSelect>
+          </FilterGroup>
+          <FilterGroup>
+            <FilterLabel theme={theme}>Role</FilterLabel>
+            <FilterSelect
+              theme={theme}
+              value={filters.role}
+              onChange={(e) => setFilters((prev) => ({ ...prev, role: e.target.value }))}
+            >
+              <option value="">Все</option>
+              {ROLES.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </FilterSelect>
+          </FilterGroup>
+          <FilterButtons>
+            <Button theme={theme} onClick={handleApplyFilters}>
+              Применить
+            </Button>
+            <Button theme={theme} onClick={handleClearFilters}>
+              Очистить
+            </Button>
+          </FilterButtons>
+        </FiltersContainer>
 
         <PageContainer ref={containerRef}>
           <LeftPanel theme={theme} $flex={splitterPosition}>
@@ -705,9 +921,11 @@ export const AdminPage = () => {
           <RightPanel theme={theme} $isVisible={!!editingUser || isCreateOpen} $flex={100 - splitterPosition}>
             {isCreateOpen && (
               <RightContent theme={theme}>
-                <BackButton theme={theme} type="button" onClick={handleClosePanel}>
-                  ← Назад
-                </BackButton>
+                <div style={{ marginBottom: 20 }}>
+                  <BackButton theme={theme} type="button" onClick={handleClosePanel}>
+                    ← Назад
+                  </BackButton>
+                </div>
                 {createError && (
                   <ErrorBlock theme={theme} style={{ marginBottom: 16 }}>
                     {createError}
@@ -788,9 +1006,14 @@ export const AdminPage = () => {
             )}
             {editingUser && (
               <RightContent theme={theme}>
-                <BackButton theme={theme} type="button" onClick={handleClosePanel}>
-                  ← Назад
-                </BackButton>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: 20 }}>
+                  <BackButton theme={theme} type="button" onClick={handleClosePanel}>
+                    ← Назад
+                  </BackButton>
+                  <ResetPasswordButton theme={theme} type="button" onClick={handleResetPassword} disabled={isResettingPassword}>
+                    {isResettingPassword ? 'Сброс…' : 'Reset Password'}
+                  </ResetPasswordButton>
+                </div>
                 {editError && (
                   <ErrorBlock theme={theme} style={{ marginBottom: 16 }}>
                     {editError}

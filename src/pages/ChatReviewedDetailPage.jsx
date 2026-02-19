@@ -1161,6 +1161,57 @@ export const ChatReviewedDetailPage = () => {
                       )}
                     </InfoCardContent>
                   </InfoCard>
+
+                  {d.extra_data && typeof d.extra_data === 'object' && Object.keys(d.extra_data).length > 0 && (
+                    <InfoCard theme={theme}>
+                      <InfoCardTitle theme={theme}>
+                        <HiCube size={14} />
+                        Extra data
+                      </InfoCardTitle>
+                      <InfoCardContent>
+                        {Object.entries(d.extra_data).map(([key, item]) => {
+                          if (item == null || typeof item !== 'object') return null;
+                          const { type, value } = item;
+                          const displayValue = value != null ? String(value) : '—';
+                          const copyToClipboard = () => {
+                            if (displayValue === '—') return;
+                            navigator.clipboard.writeText(displayValue).then(
+                              () => Notify.success('Скопировано'),
+                              () => Notify.failure('Не удалось скопировать')
+                            );
+                          };
+                          return (
+                            <InfoItem key={key}>
+                              <InfoLabel theme={theme}>{key}</InfoLabel>
+                              <InfoValue theme={theme}>
+                                {type === 'link' && displayValue !== '—' ? (
+                                  <a
+                                    href={displayValue}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{ color: theme.colors.primary, textDecoration: 'underline', wordBreak: 'break-all' }}
+                                  >
+                                    {displayValue}
+                                  </a>
+                                ) : (
+                                  <span
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={copyToClipboard}
+                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); copyToClipboard(); } }}
+                                    title="Копировать"
+                                    style={{ cursor: displayValue !== '—' ? 'pointer' : 'default', wordBreak: 'break-all' }}
+                                  >
+                                    {displayValue}
+                                  </span>
+                                )}
+                              </InfoValue>
+                            </InfoItem>
+                          );
+                        })}
+                      </InfoCardContent>
+                    </InfoCard>
+                  )}
                 </InfoGrid>
             )}
           </Content>

@@ -5,7 +5,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useUserProfile } from '../contexts/UserProfileContext';
 import { Layout } from '../components/Layout';
 import { Loader } from '../components/Loader';
-import { HiCheck, HiXMark, HiEye, HiPencil } from 'react-icons/hi2';
+import { HiCheck, HiXMark, HiEye, HiPencil, HiChevronUp, HiChevronDown } from 'react-icons/hi2';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
 const getCookie = (name) => {
@@ -292,6 +292,17 @@ const TableHeaderCell = styled.th`
   background-color: ${({ theme }) =>
     theme.colors.surface === '#F9FAFB' ? '#F0F1F3' : theme.colors.surface};
   ${({ $width }) => $width && `width: ${$width}; min-width: ${$width};`}
+  ${({ $sortable }) => $sortable && `cursor: pointer; user-select: none;`}
+  ${({ $sortable }) => $sortable && `
+    &:hover { opacity: 0.85; }
+  `}
+`;
+
+const SortIconWrap = styled.span`
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  vertical-align: middle;
 `;
 
 const TableBody = styled.tbody``;
@@ -482,6 +493,37 @@ export const AgentsPage = () => {
   const [splitterPosition, setSplitterPosition] = useState(75);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
+  const [sortBy, setSortBy] = useState(null);
+  const [sortOrder, setSortOrder] = useState('asc');
+
+  const handleSort = (header) => {
+    if (header === 'Actions') return;
+    if (sortBy === header) {
+      setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(header);
+      setSortOrder('asc');
+    }
+  };
+
+  const getSortableValue = (v) => {
+    if (v === null || v === undefined) return '';
+    if (typeof v === 'boolean') return v ? 1 : 0;
+    if (typeof v === 'number') return v;
+    if (typeof v === 'object') return JSON.stringify(v);
+    return String(v);
+  };
+
+  const sortedAgents = [...agents].sort((a, b) => {
+    if (!sortBy || sortBy === 'Actions') return 0;
+    const key = sortBy;
+    const va = getSortableValue(a[key]);
+    const vb = getSortableValue(b[key]);
+    const cmp = typeof va === 'number' && typeof vb === 'number'
+      ? va - vb
+      : String(va).localeCompare(String(vb), undefined, { numeric: true });
+    return sortOrder === 'asc' ? cmp : -cmp;
+  });
 
   useEffect(() => {
     const fetchIntegrations = async () => {
@@ -521,8 +563,7 @@ export const AgentsPage = () => {
         if (appliedFilters.type) params.append('type', appliedFilters.type);
         if (appliedFilters.name) params.append('name', appliedFilters.name);
         if (appliedFilters.available !== '') params.append('available', appliedFilters.available);
-        if (appliedFilters.integration_id) params.append('integration_id', appliedFilters.integration_id);
-        
+        if (appliedFilters.integration_id) params.append('integration_id', appliedFilters.integration_id);        
         const query = params.toString();
         const url = query ? `https://qa.qodeq.net/api/v1/settings/agent/?${query}` : 'https://qa.qodeq.net/api/v1/settings/agent/';
         
@@ -920,14 +961,21 @@ export const AgentsPage = () => {
                                 key={header} 
                                 theme={theme}
                                 $width={header === 'Actions' ? '132px' : undefined}
+                                $sortable={header !== 'Actions'}
+                                onClick={() => handleSort(header)}
                               >
                                 {header}
+                                {header !== 'Actions' && sortBy === header && (
+                                  <SortIconWrap>
+                                    {sortOrder === 'asc' ? <HiChevronUp size={14} /> : <HiChevronDown size={14} />}
+                                  </SortIconWrap>
+                                )}
                               </TableHeaderCell>
                             ))}
                           </TableHeaderRow>
                         </TableHeader>
                         <TableBody>
-                          {agents.map((agent, index) => (
+                          {sortedAgents.map((agent, index) => (
                             <TableRow key={agent.id || index} theme={theme}>
                               {headers.map((header) => {
                                 if (header === 'Actions') {

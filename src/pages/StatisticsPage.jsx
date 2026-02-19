@@ -431,7 +431,6 @@ export const StatisticsPage = () => {
   const { theme } = useTheme();
   const { department, role, profile } = useUserProfile();
   const navigate = useNavigate();
-  const skipStatisticsId = department === 'support' && role === 'agent';
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [stats, setStats] = useState(null);
@@ -448,12 +447,42 @@ export const StatisticsPage = () => {
   const previousMonthRef = useRef(null);
   const isFetchingRef = useRef(false);
 
-  // Редирект для агентов поддержки на их личную статистику
+  // Запрос /me при монтировании, чтобы сразу получить роль (и id для агента)
+  const ME_URL = 'https://qa.qodeq.net/api/v1/profile/user/me';
+  const [meProfile, setMeProfile] = useState(null);
+  const [meLoading, setMeLoading] = useState(true);
   useEffect(() => {
-    if (profile && role === 'agent' && department === 'support' && profile.id) {
-      navigate(`/statistics/agent/${profile.id}`, { replace: true });
+    let cancelled = false;
+    const fetchMe = async () => {
+      try {
+        const token = getCookie('rb_admin_token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch(ME_URL, { method: 'GET', headers });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) setMeProfile(data);
+      } catch (e) {
+        if (!cancelled) setMeProfile(null);
+      } finally {
+        if (!cancelled) setMeLoading(false);
+      }
+    };
+    fetchMe();
+    return () => { cancelled = true; };
+  }, []);
+
+  const effectiveProfile = meProfile ?? profile;
+  const effectiveRole = effectiveProfile?.role ?? role;
+  const agentId = effectiveProfile?.id ?? effectiveProfile?.agent_id ?? null;
+  const skipStatisticsId = effectiveRole === 'agent';
+
+  // Редирект для роли agent на страницу своей статистики
+  useEffect(() => {
+    if (agentId && effectiveRole === 'agent') {
+      navigate(`/statistics/agent/${agentId}`, { replace: true });
     }
-  }, [profile, role, department, navigate]);
+  }, [agentId, effectiveRole, navigate]);
 
   const fetchStats = async () => {
     if (!selectedMonth) {
@@ -675,6 +704,46 @@ export const StatisticsPage = () => {
     if (score >= 50) return 'warn';
     return 'bad';
   };
+
+  // Для роли agent: пока загружается /me — лоадер; есть agentId — редирект в useEffect (кратко лоадер); нет agentId — сообщение
+  if (effectiveRole === 'agent') {
+    if (meLoading && !effectiveProfile) {
+      return (
+        <Layout>
+          <ThemeProvider theme={theme}>
+            <div style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+              <Loader />
+            </div>
+          </ThemeProvider>
+        </Layout>
+      );
+    }
+    if (!agentId) {
+      return (
+        <Layout>
+          <ThemeProvider theme={theme}>
+            <PageContent>
+              <HeaderSection theme={theme}>
+                <Title theme={theme}>Statistics</Title>
+              </HeaderSection>
+              <div style={{ padding: 24, textAlign: 'center', color: theme.colors.secondary }}>
+                Не удалось определить ID агента для отображения статистики.
+              </div>
+            </PageContent>
+          </ThemeProvider>
+        </Layout>
+      );
+    }
+    return (
+      <Layout>
+        <ThemeProvider theme={theme}>
+          <div style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+            <Loader />
+          </div>
+        </ThemeProvider>
+      </Layout>
+    );
+  }
 
   if (loading) {
     return (

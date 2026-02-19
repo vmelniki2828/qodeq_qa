@@ -542,7 +542,7 @@ export const AgentStatisticsPage = () => {
       if (token) headers['Authorization'] = `Bearer ${token}`;
       
       const params = new URLSearchParams();
-      if ((role === 'team_lead' || role === 'supervisor') && department === 'support' && id) {
+      if (id) {
         params.append('id', id);
       }
       params.append('date_start', formattedStartDate);
@@ -591,7 +591,7 @@ export const AgentStatisticsPage = () => {
       if (token) headers['Authorization'] = `Bearer ${token}`;
       
       const params = new URLSearchParams();
-      if ((role === 'team_lead' || role === 'supervisor') && department === 'support' && id) {
+      if (id) {
         params.append('id', id);
       }
       params.append('page', currentPage.toString());
@@ -759,9 +759,11 @@ export const AgentStatisticsPage = () => {
         <PageContent>
           <HeaderSection theme={theme}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <BackButton theme={theme} onClick={() => navigate('/statistics')}>
-                ← Назад
-              </BackButton>
+              {role !== 'agent' && (
+                <BackButton theme={theme} onClick={() => navigate('/statistics')}>
+                  ← Назад
+                </BackButton>
+              )}
               <Title theme={theme}>Статистика агента</Title>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>

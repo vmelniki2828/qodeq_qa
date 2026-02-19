@@ -753,14 +753,12 @@ export const ManualCheckPage = () => {
   const formatDateForAPI = (dateString) => {
     if (!dateString) return '';
     try {
-      // Если дата в формате YYYY-MM-DDTHH:mm, конвертируем в ISO
-      if (dateString.includes('T')) {
-        const date = new Date(dateString);
-        if (!isNaN(date.getTime())) {
-          return date.toISOString();
-        }
-      }
-      return dateString;
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return dateString;
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
     } catch (e) {
       return dateString;
     }
@@ -1106,6 +1104,46 @@ export const ManualCheckPage = () => {
                       {d.score != null ? <ScoreBadge $level={scoreLevel}>{d.score}</ScoreBadge> : '—'}
                     </InfoValue>
                   </InfoItem>
+                  {d.extra_data && typeof d.extra_data === 'object' && Object.keys(d.extra_data).length > 0 && Object.entries(d.extra_data).map(([key, item]) => {
+                    if (item == null || typeof item !== 'object') return null;
+                    const { type, value } = item;
+                    const displayValue = value != null ? String(value) : '—';
+                    const copyToClipboard = () => {
+                      if (displayValue === '—') return;
+                      navigator.clipboard.writeText(displayValue).then(
+                        () => Notify.success('Скопировано'),
+                        () => Notify.failure('Не удалось скопировать')
+                      );
+                    };
+                    return (
+                      <InfoItem key={key}>
+                        <InfoLabel theme={theme}>{key}</InfoLabel>
+                        <InfoValue theme={theme}>
+                          {type === 'link' && displayValue !== '—' ? (
+                            <a
+                              href={displayValue}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ color: theme.colors.primary, textDecoration: 'underline', wordBreak: 'break-all' }}
+                            >
+                              {displayValue}
+                            </a>
+                          ) : (
+                            <span
+                              role="button"
+                              tabIndex={0}
+                              onClick={copyToClipboard}
+                              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); copyToClipboard(); } }}
+                              title="Копировать"
+                              style={{ cursor: displayValue !== '—' ? 'pointer' : 'default', wordBreak: 'break-all' }}
+                            >
+                              {displayValue}
+                            </span>
+                          )}
+                        </InfoValue>
+                      </InfoItem>
+                    );
+                  })}
                 </InfoGrid>
               </Content>
 

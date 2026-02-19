@@ -206,6 +206,16 @@ const InfoGrid = styled.div`
   width: 100%;
 `;
 
+const ExtraDataSection = styled.div`
+  width: 100%;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 6px;
+`;
+
 const InfoItem = styled.div`
   display: flex;
   flex-direction: column;
@@ -1104,47 +1114,51 @@ export const ManualCheckPage = () => {
                       {d.score != null ? <ScoreBadge $level={scoreLevel}>{d.score}</ScoreBadge> : '—'}
                     </InfoValue>
                   </InfoItem>
-                  {d.extra_data && typeof d.extra_data === 'object' && Object.keys(d.extra_data).length > 0 && Object.entries(d.extra_data).map(([key, item]) => {
-                    if (item == null || typeof item !== 'object') return null;
-                    const { type, value } = item;
-                    const displayValue = value != null ? String(value) : '—';
-                    const copyToClipboard = () => {
-                      if (displayValue === '—') return;
-                      navigator.clipboard.writeText(displayValue).then(
-                        () => Notify.success('Скопировано'),
-                        () => Notify.failure('Не удалось скопировать')
-                      );
-                    };
-                    return (
-                      <InfoItem key={key}>
-                        <InfoLabel theme={theme}>{key}</InfoLabel>
-                        <InfoValue theme={theme}>
-                          {type === 'link' && displayValue !== '—' ? (
-                            <a
-                              href={displayValue}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{ color: theme.colors.primary, textDecoration: 'underline', wordBreak: 'break-all' }}
-                            >
-                              {displayValue}
-                            </a>
-                          ) : (
-                            <span
-                              role="button"
-                              tabIndex={0}
-                              onClick={copyToClipboard}
-                              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); copyToClipboard(); } }}
-                              title="Копировать"
-                              style={{ cursor: displayValue !== '—' ? 'pointer' : 'default', wordBreak: 'break-all' }}
-                            >
-                              {displayValue}
-                            </span>
-                          )}
-                        </InfoValue>
-                      </InfoItem>
-                    );
-                  })}
                 </InfoGrid>
+                {d.extra_data && typeof d.extra_data === 'object' && Object.keys(d.extra_data).length > 0 && (
+                  <ExtraDataSection theme={theme}>
+                    {Object.entries(d.extra_data).map(([key, item]) => {
+                      if (item == null || typeof item !== 'object') return null;
+                      const { type, value } = item;
+                      const displayValue = value != null ? String(value) : '—';
+                      const copyToClipboard = () => {
+                        if (displayValue === '—') return;
+                        navigator.clipboard.writeText(displayValue).then(
+                          () => Notify.success('Скопировано'),
+                          () => Notify.failure('Не удалось скопировать')
+                        );
+                      };
+                      return (
+                        <InfoItem key={key}>
+                          <InfoLabel theme={theme}>{key}</InfoLabel>
+                          <InfoValue theme={theme}>
+                            {type === 'link' && displayValue !== '—' ? (
+                              <a
+                                href={displayValue}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ color: theme.colors.primary, textDecoration: 'underline', wordBreak: 'break-all' }}
+                              >
+                                {displayValue}
+                              </a>
+                            ) : (
+                              <span
+                                role="button"
+                                tabIndex={0}
+                                onClick={copyToClipboard}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); copyToClipboard(); } }}
+                                title="Копировать"
+                                style={{ cursor: displayValue !== '—' ? 'pointer' : 'default', wordBreak: 'break-all' }}
+                              >
+                                {displayValue}
+                              </span>
+                            )}
+                          </InfoValue>
+                        </InfoItem>
+                      );
+                    })}
+                  </ExtraDataSection>
+                )}
               </Content>
 
               <ResizableContainer ref={containerRef}>

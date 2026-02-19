@@ -162,6 +162,13 @@ const InfoGrid = styled.div`
   width: 100%;
 `;
 
+const ExtraDataBlock = styled.div`
+  width: 100%;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
 const InfoCard = styled.div`
   background: ${({ theme }) => theme.colors.surface};
   border: 1px solid ${({ theme }) => theme.colors.border};
@@ -1023,6 +1030,7 @@ export const ChatReviewedDetailPage = () => {
             {loading && <Loader />}
             {error && <ErrorBlock>{error}</ErrorBlock>}
             {!loading && !error && data && (
+              <>
               <InfoGrid theme={theme}>
                   <InfoCard theme={theme}>
                     <InfoCardTitle theme={theme}>
@@ -1161,8 +1169,9 @@ export const ChatReviewedDetailPage = () => {
                       )}
                     </InfoCardContent>
                   </InfoCard>
-
-                  {d.extra_data && typeof d.extra_data === 'object' && Object.keys(d.extra_data).length > 0 && (
+                </InfoGrid>
+                {d.extra_data && typeof d.extra_data === 'object' && Object.keys(d.extra_data).length > 0 && (
+                  <ExtraDataBlock theme={theme}>
                     <InfoCard theme={theme}>
                       <InfoCardTitle theme={theme}>
                         <HiCube size={14} />
@@ -1211,8 +1220,9 @@ export const ChatReviewedDetailPage = () => {
                         })}
                       </InfoCardContent>
                     </InfoCard>
-                  )}
-                </InfoGrid>
+                  </ExtraDataBlock>
+                )}
+              </>
             )}
           </Content>
         )}

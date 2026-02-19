@@ -5,7 +5,7 @@ import { Layout } from '../components/Layout';
 import { Loader } from '../components/Loader';
 import { apiFetch } from '../utils/api';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
-import { HiPencil } from 'react-icons/hi2';
+import { HiPencil, HiChevronUp, HiChevronDown } from 'react-icons/hi2';
 
 const USERS_URL = '/api/v1/authorization/management/users';
 const USER_UPDATE_URL = '/api/v1/authorization/management';
@@ -346,6 +346,15 @@ const TableHeaderCell = styled.th`
   background-color: ${({ theme }) =>
     theme.colors.surface === '#F9FAFB' ? '#F0F1F3' : theme.colors.surface};
   ${({ $width }) => $width && `width: ${$width}; min-width: ${$width};`}
+  ${({ $sortable }) => $sortable && `cursor: pointer; user-select: none;`}
+  ${({ $sortable }) => $sortable && `&:hover { opacity: 0.85; }`}
+`;
+
+const SortIconWrap = styled.span`
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  vertical-align: middle;
 `;
 
 const TableBody = styled.tbody``;
@@ -532,6 +541,26 @@ export const AdminPage = () => {
   const [filters, setFilters] = useState(defaultFilters);
   const [appliedFilters, setAppliedFilters] = useState(defaultFilters);
   const [isFiltersVisible, setIsFiltersVisible] = useState(false);
+  const [sortBy, setSortBy] = useState(null);
+  const [sortOrder, setSortOrder] = useState('asc');
+
+  const handleSort = (key) => {
+    if (key === 'Actions') return;
+    if (sortBy === key) {
+      setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(key);
+      setSortOrder('asc');
+    }
+  };
+
+  const getSortableValue = (v) => {
+    if (v === null || v === undefined) return '';
+    if (typeof v === 'boolean') return v ? 1 : 0;
+    if (typeof v === 'number') return v;
+    if (typeof v === 'object') return JSON.stringify(v);
+    return String(v);
+  };
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -772,6 +801,16 @@ export const AdminPage = () => {
     const isObject = first !== null && typeof first === 'object' && !Array.isArray(first);
     const keys = isObject ? Object.keys(first).filter((k) => k !== 'id') : [];
 
+    const sortedItems = [...items].sort((a, b) => {
+      if (!sortBy || sortBy === 'Actions') return 0;
+      const va = getSortableValue(a[sortBy]);
+      const vb = getSortableValue(b[sortBy]);
+      const cmp = typeof va === 'number' && typeof vb === 'number'
+        ? va - vb
+        : String(va).localeCompare(String(vb), undefined, { numeric: true });
+      return sortOrder === 'asc' ? cmp : -cmp;
+    });
+
     if (isObject && keys.length > 0) {
       return (
         <TableContainer theme={theme}>
@@ -779,8 +818,18 @@ export const AdminPage = () => {
             <TableHeader theme={theme}>
               <TableHeaderRow theme={theme}>
                 {keys.map((k) => (
-                  <TableHeaderCell key={k} theme={theme}>
+                  <TableHeaderCell
+                    key={k}
+                    theme={theme}
+                    $sortable
+                    onClick={() => handleSort(k)}
+                  >
                     {k}
+                    {sortBy === k && (
+                      <SortIconWrap>
+                        {sortOrder === 'asc' ? <HiChevronUp size={14} /> : <HiChevronDown size={14} />}
+                      </SortIconWrap>
+                    )}
                   </TableHeaderCell>
                 ))}
                 <TableHeaderCell theme={theme} $width="132px">
@@ -789,7 +838,7 @@ export const AdminPage = () => {
               </TableHeaderRow>
             </TableHeader>
             <TableBody>
-              {items.map((item, idx) => (
+              {sortedItems.map((item, idx) => (
                 <TableRow key={item?.id ?? idx} theme={theme}>
                   {keys.map((k) => (
                     <TableCell key={k} theme={theme}>

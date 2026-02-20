@@ -161,10 +161,6 @@ export const Pagination = ({
     return pages;
   };
 
-  if (totalPages <= 1) {
-    return null;
-  }
-
   return (
     <PaginationSection>
       <TotalText>Total: {totalItems}</TotalText>

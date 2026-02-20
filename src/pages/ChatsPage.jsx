@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import styled, { ThemeProvider } from 'styled-components';
 import { useTheme } from '../contexts/ThemeContext';
 import { useUserProfile } from '../contexts/UserProfileContext';
@@ -358,6 +358,8 @@ export const ChatsPage = () => {
   const { theme } = useTheme();
   const { department, role } = useUserProfile();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [chats, setChats] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [pagesCount, setPagesCount] = useState(null);
@@ -389,9 +391,41 @@ export const ChatsPage = () => {
     created_to: '',
     checked: ''
   });
-  const [currentPage, setCurrentPage] = useState(1);
+  const CHATS_PAGE_KEY = 'chats_currentPage';
+  
+  const getInitialPage = () => {
+    const urlPage = parseInt(searchParams.get('page') || '0', 10);
+    if (urlPage > 0) return urlPage;
+    try {
+      const savedPage = parseInt(sessionStorage.getItem(CHATS_PAGE_KEY) || '1', 10);
+      return savedPage > 0 ? savedPage : 1;
+    } catch {
+      return 1;
+    }
+  };
+  
+  const [currentPage, setCurrentPage] = useState(getInitialPage);
   const [isFiltersVisible, setIsFiltersVisible] = useState(false);
   const [pageSize, setPageSize] = useState(10);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    try {
+      sessionStorage.setItem(CHATS_PAGE_KEY, page.toString());
+    } catch {}
+    setSearchParams((prev) => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set('page', page.toString());
+      return newParams;
+    });
+  };
+
+  // Сохраняем текущую страницу в sessionStorage при каждом изменении
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(CHATS_PAGE_KEY, currentPage.toString());
+    } catch {}
+  }, [currentPage]);
 
   // Загрузка данных из API
   const fetchChats = useCallback(async () => {
@@ -621,7 +655,7 @@ export const ChatsPage = () => {
 
   const handleApplyFilters = () => {
     setAppliedFilters({ ...filters });
-    setCurrentPage(1); // Сбрасываем на первую страницу при применении фильтров
+    handlePageChange(1);
   };
 
   const handleClearFilters = () => {
@@ -637,7 +671,7 @@ export const ChatsPage = () => {
     };
     setFilters(defaultFilters);
     setAppliedFilters(defaultFilters);
-    setCurrentPage(1);
+    handlePageChange(1);
   };
 
   const handleView = (chat, e) => {
@@ -844,7 +878,7 @@ export const ChatsPage = () => {
                   value={pageSize}
                   onChange={(e) => {
                     setPageSize(Number(e.target.value));
-                    setCurrentPage(1);
+                    handlePageChange(1);
                   }}
                   style={{ minWidth: '80px', width: 'auto' }}
                 >
@@ -923,7 +957,7 @@ export const ChatsPage = () => {
             currentPage={currentPage}
             totalPages={totalPages}
             totalItems={totalCount}
-            onPageChange={setCurrentPage}
+            onPageChange={handlePageChange}
             itemsPerPage={pageSize}
           />
         </div>

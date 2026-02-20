@@ -5,7 +5,9 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useUserProfile } from '../contexts/UserProfileContext';
 import { Layout } from '../components/Layout';
 import { Loader } from '../components/Loader';
+import { Pagination } from '../components/Pagination';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
+import { HiChevronUp, HiChevronDown } from 'react-icons/hi2';
 
 const getCookie = (name) => {
   const value = `; ${document.cookie}`;
@@ -343,12 +345,21 @@ const TableHeaderRow = styled.tr`
 
 const TableHeaderCell = styled.th`
   padding: 12px 16px;
-  text-align: left;
+  text-align: ${({ $align }) => $align || 'left'};
   font-size: 12px;
   font-weight: 600;
   color: ${({ theme }) => theme.colors.secondary};
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  ${({ $sortable }) => $sortable && `cursor: pointer; user-select: none;`}
+  ${({ $sortable }) => $sortable && `&:hover { opacity: 0.85; }`}
+`;
+
+const SortIconWrap = styled.span`
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  vertical-align: middle;
 `;
 
 const TableBody = styled.tbody``;
@@ -367,6 +378,7 @@ const TableCell = styled.td`
   padding: 12px 16px;
   font-size: 13px;
   color: ${({ theme }) => theme.colors.primary};
+  text-align: ${({ $align }) => $align || 'left'};
 `;
 
 const TagBadge = styled.span`
@@ -427,6 +439,37 @@ const AgentNameCell = styled(TableCell)`
   }
 `;
 
+const PageSizeWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  margin-top: 12px;
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
+const PageSizeLabel = styled.span`
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.secondary};
+  margin-right: 8px;
+`;
+
+const PageSizeSelect = styled.select`
+  padding: 6px 10px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 6px;
+  background-color: ${({ theme }) => theme.colors.background};
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  margin-right: 12px;
+
+  &:focus {
+    border-color: ${({ theme }) => theme.colors.accent};
+  }
+`;
+
 export const StatisticsPage = () => {
   const { theme } = useTheme();
   const { department, role, profile } = useUserProfile();
@@ -442,7 +485,29 @@ export const StatisticsPage = () => {
   const [qaGroups, setQAGroups] = useState([]);
   const [selectedQAGroupId, setSelectedQAGroupId] = useState('');
   const [loadingQAGroups, setLoadingQAGroups] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [sortBy, setSortBy] = useState(null);
+  const [sortOrder, setSortOrder] = useState('asc');
   const months = generateMonths();
+
+  const handleAgentSort = (key) => {
+    if (sortBy === key) {
+      setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(key);
+      setSortOrder('asc');
+    }
+    setCurrentPage(1);
+  };
+
+  const getSortableValue = (v) => {
+    if (v === null || v === undefined) return '';
+    if (typeof v === 'boolean') return v ? 1 : 0;
+    if (typeof v === 'number') return v;
+    if (typeof v === 'object') return JSON.stringify(v);
+    return String(v);
+  };
   const hasLoadedRef = useRef(false);
   const previousMonthRef = useRef(null);
   const isFetchingRef = useRef(false);
@@ -705,6 +770,13 @@ export const StatisticsPage = () => {
     return 'bad';
   };
 
+  // Сброс страницы и сортировки при изменении данных
+  useEffect(() => {
+    setCurrentPage(1);
+    setSortBy(null);
+    setSortOrder('asc');
+  }, [stats]);
+
   // Для роли agent: пока загружается /me — лоадер; есть agentId — редирект в useEffect (кратко лоадер); нет agentId — сообщение
   if (effectiveRole === 'agent') {
     if (meLoading && !effectiveProfile) {
@@ -913,46 +985,106 @@ export const StatisticsPage = () => {
                   </StatsCard>
                 )}
 
-                {stats.agents && stats.agents.length > 0 && (
-                  <StatsCard theme={theme}>
-                    <StatsTitle theme={theme}>Статистика по агентам</StatsTitle>
-                    <Table theme={theme}>
-                      <TableHeader theme={theme}>
-                        <TableHeaderRow>
-                          <TableHeaderCell theme={theme}>Имя агента</TableHeaderCell>
-                          <TableHeaderCell theme={theme}>Руководитель</TableHeaderCell>
-                          <TableHeaderCell theme={theme}>Всего чатов</TableHeaderCell>
-                          <TableHeaderCell theme={theme}>Проверено</TableHeaderCell>
-                          <TableHeaderCell theme={theme}>Оценка</TableHeaderCell>
-                        </TableHeaderRow>
-                      </TableHeader>
-                      <TableBody>
-                        {stats.agents.map((agent, idx) => (
-                          <TableRow key={agent.agents_id || idx} theme={theme}>
-                            <AgentNameCell 
-                              theme={theme}
-                              onClick={() => navigate(`/statistics/agent/${agent.agents_id}`)}
-                            >
-                              {agent.agents_name || '—'}
-                            </AgentNameCell>
-                            <TableCell theme={theme}>{agent.head || '—'}</TableCell>
-                            <TableCell theme={theme}>{agent.total_chats || 0}</TableCell>
-                            <TableCell theme={theme}>{agent.total_checked || 0}</TableCell>
-                            <TableCell theme={theme}>
-                              {agent.grade !== null && agent.grade !== undefined ? (
-                                <ScoreBadge $level={getScoreLevel(agent.grade)}>
-                                  {agent.grade}
-                                </ScoreBadge>
-                              ) : (
-                                '—'
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </StatsCard>
-                )}
+                {stats.agents && stats.agents.length > 0 && (() => {
+                  const sortedAgents = [...stats.agents].sort((a, b) => {
+                    if (!sortBy) return 0;
+                    const va = getSortableValue(a[sortBy]);
+                    const vb = getSortableValue(b[sortBy]);
+                    const cmp = typeof va === 'number' && typeof vb === 'number'
+                      ? va - vb
+                      : String(va).localeCompare(String(vb), undefined, { numeric: true });
+                    return sortOrder === 'asc' ? cmp : -cmp;
+                  });
+                  
+                  const totalAgents = sortedAgents.length;
+                  const totalPages = Math.ceil(totalAgents / pageSize) || 1;
+                  const startIndex = (currentPage - 1) * pageSize;
+                  const endIndex = startIndex + pageSize;
+                  const paginatedAgents = sortedAgents.slice(startIndex, endIndex);
+
+                  const columns = [
+                    { key: 'agents_name', label: 'Имя агента' },
+                    { key: 'head', label: 'Руководитель' },
+                    { key: 'total_chats', label: 'Всего чатов' },
+                    { key: 'total_checked', label: 'Проверено' },
+                    { key: 'grade', label: 'Оценка' },
+                  ];
+                  
+                  return (
+                    <StatsCard theme={theme}>
+                      <StatsTitle theme={theme}>Статистика по агентам</StatsTitle>
+                      <Table theme={theme}>
+                        <TableHeader theme={theme}>
+                          <TableHeaderRow>
+                            {columns.map((col) => (
+                              <TableHeaderCell
+                                key={col.key}
+                                theme={theme}
+                                $sortable
+                                $align="center"
+                                onClick={() => handleAgentSort(col.key)}
+                              >
+                                {col.label}
+                                {sortBy === col.key && (
+                                  <SortIconWrap>
+                                    {sortOrder === 'asc' ? <HiChevronUp size={14} /> : <HiChevronDown size={14} />}
+                                  </SortIconWrap>
+                                )}
+                              </TableHeaderCell>
+                            ))}
+                          </TableHeaderRow>
+                        </TableHeader>
+                        <TableBody>
+                          {paginatedAgents.map((agent, idx) => (
+                            <TableRow key={agent.agents_id || idx} theme={theme}>
+                              <AgentNameCell 
+                                theme={theme}
+                                $align="center"
+                                onClick={() => navigate(`/statistics/agent/${agent.agents_id}`)}
+                              >
+                                {agent.agents_name || '—'}
+                              </AgentNameCell>
+                              <TableCell theme={theme} $align="center">{agent.head || '—'}</TableCell>
+                              <TableCell theme={theme} $align="center">{agent.total_chats || 0}</TableCell>
+                              <TableCell theme={theme} $align="center">{agent.total_checked || 0}</TableCell>
+                              <TableCell theme={theme} $align="center">
+                                {agent.grade !== null && agent.grade !== undefined ? (
+                                  <ScoreBadge $level={getScoreLevel(agent.grade)}>
+                                    {agent.grade}
+                                  </ScoreBadge>
+                                ) : (
+                                  '—'
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                      <PageSizeWrapper theme={theme}>
+                        <PageSizeLabel theme={theme}>Записей на странице:</PageSizeLabel>
+                        <PageSizeSelect
+                          value={pageSize}
+                          onChange={(e) => {
+                            setPageSize(Number(e.target.value));
+                            setCurrentPage(1);
+                          }}
+                        >
+                          <option value={10}>10</option>
+                          <option value={20}>20</option>
+                          <option value={50}>50</option>
+                          <option value={100}>100</option>
+                        </PageSizeSelect>
+                      </PageSizeWrapper>
+                      <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        totalItems={totalAgents}
+                        onPageChange={setCurrentPage}
+                        itemsPerPage={pageSize}
+                      />
+                    </StatsCard>
+                  );
+                })()}
 
                 {(!stats.agents || stats.agents.length === 0) &&
                   (!stats.aggregate || (!stats.aggregate.count_chats && !stats.aggregate.average_score)) && (

@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { useTheme } from '../contexts/ThemeContext';
 import { Layout } from '../components/Layout';
 import { Loader } from '../components/Loader';
+import { Pagination } from '../components/Pagination';
 import { apiFetch } from '../utils/api';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import { HiPencil, HiChevronUp, HiChevronDown } from 'react-icons/hi2';
@@ -508,6 +509,36 @@ const FilterButtons = styled.div`
   margin-left: auto;
 `;
 
+const PageSizeWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
+const PageSizeLabel = styled.span`
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.secondary};
+  margin-right: 8px;
+`;
+
+const PageSizeSelect = styled.select`
+  padding: 6px 10px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 6px;
+  background-color: ${({ theme }) => theme.colors.background};
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  margin-right: 12px;
+
+  &:focus {
+    border-color: ${({ theme }) => theme.colors.accent};
+  }
+`;
+
 export const AdminPage = () => {
   const { theme } = useTheme();
   const [data, setData] = useState(null);
@@ -543,6 +574,8 @@ export const AdminPage = () => {
   const [isFiltersVisible, setIsFiltersVisible] = useState(false);
   const [sortBy, setSortBy] = useState(null);
   const [sortOrder, setSortOrder] = useState('asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   const handleSort = (key) => {
     if (key === 'Actions') return;
@@ -811,6 +844,12 @@ export const AdminPage = () => {
       return sortOrder === 'asc' ? cmp : -cmp;
     });
 
+    const totalCount = sortedItems.length;
+    const totalPages = Math.ceil(totalCount / pageSize) || 1;
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginatedItems = sortedItems.slice(startIndex, endIndex);
+
     if (isObject && keys.length > 0) {
       return (
         <TableContainer theme={theme}>
@@ -838,7 +877,7 @@ export const AdminPage = () => {
               </TableHeaderRow>
             </TableHeader>
             <TableBody>
-              {sortedItems.map((item, idx) => (
+              {paginatedItems.map((item, idx) => (
                 <TableRow key={item?.id ?? idx} theme={theme}>
                   {keys.map((k) => (
                     <TableCell key={k} theme={theme}>
@@ -865,6 +904,29 @@ export const AdminPage = () => {
               ))}
             </TableBody>
           </Table>
+          <PageSizeWrapper theme={theme}>
+            <PageSizeLabel theme={theme}>Записей на странице:</PageSizeLabel>
+            <PageSizeSelect
+              theme={theme}
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </PageSizeSelect>
+          </PageSizeWrapper>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalCount}
+            onPageChange={setCurrentPage}
+            itemsPerPage={pageSize}
+          />
         </TableContainer>
       );
     }

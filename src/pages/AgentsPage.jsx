@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled, { ThemeProvider } from 'styled-components';
 import { useTheme } from '../contexts/ThemeContext';
 import { useUserProfile } from '../contexts/UserProfileContext';
 import { Layout } from '../components/Layout';
 import { Loader } from '../components/Loader';
+import { Pagination } from '../components/Pagination';
 import { HiCheck, HiXMark, HiEye, HiPencil, HiChevronUp, HiChevronDown } from 'react-icons/hi2';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
@@ -455,6 +456,40 @@ const FilterLabel = styled.label`
   letter-spacing: 0.5px;
 `;
 
+const PaginationWrapper = styled.div`
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
+  background-color: ${({ theme }) => theme.colors.background};
+`;
+
+const PageSizeSelect = styled.select`
+  padding: 6px 10px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 6px;
+  background-color: ${({ theme }) => theme.colors.background};
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  margin-right: 12px;
+
+  &:focus {
+    border-color: ${({ theme }) => theme.colors.accent};
+  }
+`;
+
+const PageSizeLabel = styled.span`
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.secondary};
+  margin-right: 8px;
+`;
+
+const PageSizeWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
+`;
 
 export const AgentsPage = () => {
   const { theme } = useTheme();
@@ -495,6 +530,8 @@ export const AgentsPage = () => {
   const containerRef = useRef(null);
   const [sortBy, setSortBy] = useState(null);
   const [sortOrder, setSortOrder] = useState('asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   const handleSort = (header) => {
     if (header === 'Actions') return;
@@ -525,6 +562,12 @@ export const AgentsPage = () => {
     return sortOrder === 'asc' ? cmp : -cmp;
   });
 
+  const totalCount = agents.length;
+  const totalPages = Math.ceil(totalCount / pageSize) || 1;
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedAgents = sortedAgents.slice(startIndex, endIndex);
+
   useEffect(() => {
     const fetchIntegrations = async () => {
       try {
@@ -548,43 +591,51 @@ export const AgentsPage = () => {
     fetchIntegrations();
   }, []);
 
-  useEffect(() => {
-    const fetchAgents = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const token = getCookie('rb_admin_token');
-        const headers = { 'Content-Type': 'application/json' };
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-        
-        // Формируем URL с примененными фильтрами
-        const params = new URLSearchParams();
-        if (appliedFilters.lcid) params.append('lcid', appliedFilters.lcid);
-        if (appliedFilters.type) params.append('type', appliedFilters.type);
-        if (appliedFilters.name) params.append('name', appliedFilters.name);
-        if (appliedFilters.available !== '') params.append('available', appliedFilters.available);
-        if (appliedFilters.integration_id) params.append('integration_id', appliedFilters.integration_id);        
-        const query = params.toString();
-        const url = query ? `https://qa.qodeq.net/api/v1/settings/agent/?${query}` : 'https://qa.qodeq.net/api/v1/settings/agent/';
-        
-        const res = await fetch(url, {
-          method: 'GET',
-          headers
-        });
-        
-        if (!res.ok) throw new Error(`Ошибка ${res.status}`);
-        const json = await res.json();
-        setAgents(Array.isArray(json) ? json : []);
-      } catch (e) {
-        setError(e.message);
+  const fetchAgents = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = getCookie('rb_admin_token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      
+      const params = new URLSearchParams();
+      if (appliedFilters.lcid) params.append('lcid', appliedFilters.lcid);
+      if (appliedFilters.type) params.append('type', appliedFilters.type);
+      if (appliedFilters.name) params.append('name', appliedFilters.name);
+      if (appliedFilters.available !== '') params.append('available', appliedFilters.available);
+      if (appliedFilters.integration_id) params.append('integration_id', appliedFilters.integration_id);
+      
+      const query = params.toString();
+      const url = query ? `https://qa.qodeq.net/api/v1/settings/agent/?${query}` : 'https://qa.qodeq.net/api/v1/settings/agent/';
+      
+      const res = await fetch(url, {
+        method: 'GET',
+        headers
+      });
+      
+      if (!res.ok) throw new Error(`Ошибка ${res.status}`);
+      const json = await res.json();
+      
+      if (Array.isArray(json)) {
+        setAgents(json);
+      } else if (json && typeof json === 'object') {
+        const items = json.items || json.data || json.results || [];
+        setAgents(Array.isArray(items) ? items : []);
+      } else {
         setAgents([]);
-        // Не показываем уведомление при начальной загрузке, только при явных действиях
-      } finally {
-        setLoading(false);
       }
-    };
-    fetchAgents();
+    } catch (e) {
+      setError(e.message);
+      setAgents([]);
+    } finally {
+      setLoading(false);
+    }
   }, [appliedFilters]);
+
+  useEffect(() => {
+    fetchAgents();
+  }, [fetchAgents]);
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -622,49 +673,16 @@ export const AgentsPage = () => {
   };
 
   const handleRefresh = () => {
-    const fetchAgents = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const token = getCookie('rb_admin_token');
-        const headers = { 'Content-Type': 'application/json' };
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-        
-        // Формируем URL с примененными фильтрами
-        const params = new URLSearchParams();
-        if (appliedFilters.lcid) params.append('lcid', appliedFilters.lcid);
-        if (appliedFilters.type) params.append('type', appliedFilters.type);
-        if (appliedFilters.name) params.append('name', appliedFilters.name);
-        if (appliedFilters.available !== '') params.append('available', appliedFilters.available);
-        if (appliedFilters.integration_id) params.append('integration_id', appliedFilters.integration_id);
-        
-        const query = params.toString();
-        const url = query ? `https://qa.qodeq.net/api/v1/settings/agent/?${query}` : 'https://qa.qodeq.net/api/v1/settings/agent/';
-        
-        const res = await fetch(url, {
-          method: 'GET',
-          headers
-        });
-        
-        if (!res.ok) throw new Error(`Ошибка ${res.status}`);
-        const json = await res.json();
-        setAgents(Array.isArray(json) ? json : []);
-      } catch (e) {
-        setError(e.message);
-        setAgents([]);
-        Notify.failure('Ошибка при обновлении списка агентов');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchAgents();
   };
 
   const handleApplyFilters = () => {
+    setCurrentPage(1);
     setAppliedFilters({ ...filters });
   };
 
   const handleClearFilters = () => {
+    setCurrentPage(1);
     setFilters({
       lcid: '',
       type: '',
@@ -975,7 +993,7 @@ export const AgentsPage = () => {
                           </TableHeaderRow>
                         </TableHeader>
                         <TableBody>
-                          {sortedAgents.map((agent, index) => (
+                          {paginatedAgents.map((agent, index) => (
                             <TableRow key={agent.id || index} theme={theme}>
                               {headers.map((header) => {
                                 if (header === 'Actions') {
@@ -1026,6 +1044,31 @@ export const AgentsPage = () => {
                   </>
                 )}
               </TableContainer>
+
+              <PageSizeWrapper theme={theme}>
+                <PageSizeLabel theme={theme}>Записей на странице:</PageSizeLabel>
+                <PageSizeSelect
+                  theme={theme}
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </PageSizeSelect>
+              </PageSizeWrapper>
+
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalCount}
+                onPageChange={setCurrentPage}
+                itemsPerPage={pageSize}
+              />
             </LeftPanel>
 
             <Divider 

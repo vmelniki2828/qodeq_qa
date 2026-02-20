@@ -5,7 +5,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useUserProfile } from '../contexts/UserProfileContext';
 import { Layout } from '../components/Layout';
 import { Loader } from '../components/Loader';
-import { HiCheck, HiXMark } from 'react-icons/hi2';
+import { HiCheck, HiXMark, HiChevronUp, HiChevronDown } from 'react-icons/hi2';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
 const getCookie = (name) => {
@@ -349,12 +349,21 @@ const TableHeaderRow = styled.tr`
 
 const TableHeaderCell = styled.th`
   padding: 12px 16px;
-  text-align: left;
+  text-align: ${({ $align }) => $align || 'left'};
   font-size: 12px;
   font-weight: 600;
   color: ${({ theme }) => theme.colors.secondary};
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  ${({ $sortable }) => $sortable && `cursor: pointer; user-select: none;`}
+  ${({ $sortable }) => $sortable && `&:hover { opacity: 0.85; }`}
+`;
+
+const SortIconWrap = styled.span`
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  vertical-align: middle;
 `;
 
 const TableBody = styled.tbody``;
@@ -511,7 +520,37 @@ export const AgentStatisticsPage = () => {
   const [selectedMonth, setSelectedMonth] = useState(getInitialMonth());
   const [checked, setChecked] = useState('All');
   const months = generateMonths();
+  const [sortBy, setSortBy] = useState(null);
+  const [sortOrder, setSortOrder] = useState('asc');
   const hasLoadedRef = useRef(false);
+
+  const handleChatSort = (key) => {
+    if (sortBy === key) {
+      setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(key);
+      setSortOrder('asc');
+    }
+  };
+
+  const getSortableValue = (v) => {
+    if (v === null || v === undefined) return '';
+    if (typeof v === 'boolean') return v ? 1 : 0;
+    if (typeof v === 'number') return v;
+    if (Array.isArray(v)) return v.join(', ');
+    if (typeof v === 'object') return JSON.stringify(v);
+    return String(v);
+  };
+
+  const sortedChats = [...chats].sort((a, b) => {
+    if (!sortBy) return 0;
+    const va = getSortableValue(a[sortBy]);
+    const vb = getSortableValue(b[sortBy]);
+    const cmp = typeof va === 'number' && typeof vb === 'number'
+      ? va - vb
+      : String(va).localeCompare(String(vb), undefined, { numeric: true });
+    return sortOrder === 'asc' ? cmp : -cmp;
+  });
   const previousMonthRef = useRef(null);
   const isFetchingRef = useRef(false);
 
@@ -923,19 +962,35 @@ export const AgentStatisticsPage = () => {
                       <Table theme={theme}>
                         <TableHeader theme={theme}>
                           <TableHeaderRow>
-                            <TableHeaderCell theme={theme}>Chat ID</TableHeaderCell>
-                            <TableHeaderCell theme={theme}>Thread ID</TableHeaderCell>
-                            <TableHeaderCell theme={theme}>User Type</TableHeaderCell>
-                            <TableHeaderCell theme={theme}>Checked</TableHeaderCell>
-                            <TableHeaderCell theme={theme}>Score</TableHeaderCell>
-                            <TableHeaderCell theme={theme}>Created At</TableHeaderCell>
-                            <TableHeaderCell theme={theme}>Duration</TableHeaderCell>
-                            <TableHeaderCell theme={theme}>Project</TableHeaderCell>
-                            <TableHeaderCell theme={theme}>Username</TableHeaderCell>
+                            {[
+                              { key: 'chat_id', label: 'Chat ID' },
+                              { key: 'thread_id', label: 'Thread ID' },
+                              { key: 'user_type', label: 'User Type' },
+                              { key: 'checked', label: 'Checked' },
+                              { key: 'score', label: 'Score' },
+                              { key: 'created_chat_at', label: 'Created At' },
+                              { key: 'chat_duration', label: 'Duration' },
+                              { key: 'project_title', label: 'Project' },
+                              { key: 'username', label: 'Username' },
+                            ].map((col) => (
+                              <TableHeaderCell
+                                key={col.key}
+                                theme={theme}
+                                $sortable
+                                onClick={() => handleChatSort(col.key)}
+                              >
+                                {col.label}
+                                {sortBy === col.key && (
+                                  <SortIconWrap>
+                                    {sortOrder === 'asc' ? <HiChevronUp size={14} /> : <HiChevronDown size={14} />}
+                                  </SortIconWrap>
+                                )}
+                              </TableHeaderCell>
+                            ))}
                           </TableHeaderRow>
                         </TableHeader>
                         <TableBody>
-                          {chats.map((chat) => (
+                          {sortedChats.map((chat) => (
                             <TableRow 
                               key={chat.id} 
                               theme={theme}

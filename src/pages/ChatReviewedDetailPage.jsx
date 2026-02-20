@@ -19,7 +19,7 @@ const formatDate = (v) => {
   if (!v) return '—';
   try {
     const d = new Date(v);
-    return isNaN(d.getTime()) ? v : d.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return isNaN(d.getTime()) ? v : d.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
   } catch (e) { return v; }
 };
 
@@ -1273,7 +1273,10 @@ export const ChatReviewedDetailPage = () => {
                                 <MessageTime theme={theme}>{formatDate(msg.created_at)}</MessageTime>
                               </MessageHeader>
                             )}
-                            <MessageText theme={theme} $isSystem={isSystem}>{renderTextWithLinks(msg.text, theme)}</MessageText>
+                            <MessageText theme={theme} $isSystem={isSystem}>
+                              {renderTextWithLinks(msg.text, theme)}
+                              {isSystem && <span style={{ marginLeft: 8, opacity: 0.7 }}>• {formatDate(msg.created_at)}</span>}
+                            </MessageText>
                           </MessageCard>
                         );
                       })}
